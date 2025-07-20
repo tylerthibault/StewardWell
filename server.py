@@ -5,12 +5,13 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
 import string
 import os
+import config
 
 # Initialize Flask app
-app = Flask(__name__, template_folder='src/templates', static_folder='src/static')
-app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///stewardwell.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app = Flask(__name__, template_folder=config.TEMPLATE_FOLDER, static_folder=config.STATIC_FOLDER)
+app.config['SECRET_KEY'] = config.SECRET_KEY
+app.config['SQLALCHEMY_DATABASE_URI'] = config.DATABASE_URI
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = config.SQLALCHEMY_TRACK_MODIFICATIONS
 
 # Initialize extensions
 db = SQLAlchemy(app)
@@ -197,6 +198,8 @@ def delete_child(child_id):
     return redirect(url_for('dashboard'))
 
 if __name__ == '__main__':
+    # Development mode - run with debug enabled
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+    print(f"Starting {config.APPNAME} in development mode...")
+    app.run(host=config.HOST, port=config.PORT, debug=True)
