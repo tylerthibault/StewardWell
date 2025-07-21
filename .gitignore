@@ -4,6 +4,9 @@
 # vscode
 .vscode
 
+# database
+instance/
+
 # Python
 __pycache__/
 *.py[cod]
