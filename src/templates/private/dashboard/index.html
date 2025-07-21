@@ -15,7 +15,7 @@
             <div class="family-actions">
                 <div class="action-card">
                     <h4>Create a Family</h4>
-                    <form method="POST" action="/create_family">
+                    <form method="POST" action="{{ url_for('family.create_family') }}">
                         <div class="form-group">
                             <label for="family_name">Family Name:</label>
                             <input type="text" id="family_name" name="family_name" required>
@@ -26,7 +26,7 @@
                 
                 <div class="action-card">
                     <h4>Join a Family</h4>
-                    <form method="POST" action="/join_family">
+                    <form method="POST" action="{{ url_for('family.join_family') }}">
                         <div class="form-group">
                             <label for="family_code">Family Code:</label>
                             <input type="text" id="family_code" name="family_code" required maxlength="6">
@@ -49,7 +49,7 @@
             <h4>Children</h4>
             
             <div class="add-child">
-                <form method="POST" action="/add_child" class="inline-form">
+                <form method="POST" action="{{ url_for('child.add_child') }}" class="inline-form">
                     <div class="form-group">
                         <label for="child_name">Child Name:</label>
                         <input type="text" id="child_name" name="child_name" required>
@@ -73,7 +73,7 @@
                                 {% endif %}
                             </div>
                             <div class="child-actions">
-                                <a href="/delete_child/{{ child.id }}" 
+                                <a href="{{ url_for('child.delete_child', child_id=child.id) }}" 
                                    class="btn btn-danger btn-small"
                                    onclick="return confirm('Are you sure you want to remove {{ child.name }}?')">
                                    Remove

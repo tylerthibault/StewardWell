@@ -5,7 +5,7 @@ import os
 
 # Application settings
 APPNAME = "StewardWell"
-PORT = int(os.environ.get('PORT', 5000))
+PORT = int(os.environ.get('PORT', 5111))
 HOST = os.environ.get('HOST', '127.0.0.1')
 
 # Flask settings
