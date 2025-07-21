@@ -44,6 +44,45 @@
             <p class="family-code-note">Share this code with family members so they can join!</p>
         </div>
         
+        <!-- Family Members section -->
+        <div class="family-members-section">
+            <h4>Family Members</h4>
+            
+            <!-- Current User Profile -->
+            <div class="member-card current-user">
+                <div class="member-info">
+                    <h5>{{ current_user.username }} (You)</h5>
+                    <p>{{ current_user.email }}</p>
+                </div>
+                <div class="member-actions">
+                    <button onclick="showEditUserModal({{ current_user.id }}, '{{ current_user.username }}', '{{ current_user.email }}')" 
+                            class="btn btn-secondary btn-small">
+                        Edit Profile
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Other Family Members -->
+            {% for member in members %}
+                <div class="member-card">
+                    <div class="member-info">
+                        <h5>{{ member.username }}</h5>
+                        <p>{{ member.email }}</p>
+                    </div>
+                    <div class="member-actions">
+                        <button onclick="showEditUserModal({{ member.id }}, '{{ member.username }}', '{{ member.email }}')" 
+                                class="btn btn-secondary btn-small">
+                            Edit Profile
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+            
+            {% if not members %}
+                <p class="no-members">You're the only family member. Share the family code to invite others!</p>
+            {% endif %}
+        </div>
+        
         <!-- Children section -->
         <div class="children-section">
             <h4>Children</h4>
@@ -55,8 +94,16 @@
                         <input type="text" id="child_name" name="child_name" required>
                     </div>
                     <div class="form-group">
+                        <label for="child_birthdate">Birthdate:</label>
+                        <input type="date" id="child_birthdate" name="child_birthdate">
+                    </div>
+                    <div class="form-group">
                         <label for="child_age">Age (optional):</label>
                         <input type="number" id="child_age" name="child_age" min="0" max="18">
+                    </div>
+                    <div class="form-group">
+                        <label for="child_pin">PIN (4-10 digits):</label>
+                        <input type="text" id="child_pin" name="child_pin" pattern="[0-9]{4,10}" maxlength="10">
                     </div>
                     <button type="submit" class="btn btn-primary">Add Child</button>
                 </form>
@@ -68,11 +115,21 @@
                         <div class="child-card">
                             <div class="child-info">
                                 <h5>{{ child.name }}</h5>
-                                {% if child.age %}
-                                    <p>Age: {{ child.age }}</p>
+                                {% if child.calculate_age() %}
+                                    <p>Age: {{ child.calculate_age() }}</p>
+                                {% endif %}
+                                {% if child.birthdate %}
+                                    <p>Birthdate: {{ child.birthdate.strftime('%Y-%m-%d') }}</p>
+                                {% endif %}
+                                {% if child.pin %}
+                                    <p>PIN: ****</p>
                                 {% endif %}
                             </div>
                             <div class="child-actions">
+                                <button onclick="showEditChildModal({{ child.id }}, '{{ child.name }}', '{{ child.birthdate.strftime('%Y-%m-%d') if child.birthdate else '' }}', '{{ child.pin or '' }}', {{ child.age or 'null' }})" 
+                                        class="btn btn-secondary btn-small">
+                                    Edit
+                                </button>
                                 <a href="{{ url_for('child.delete_child', child_id=child.id) }}" 
                                    class="btn btn-danger btn-small"
                                    onclick="return confirm('Are you sure you want to remove {{ child.name }}?')">
@@ -88,4 +145,93 @@
         </div>
     {% endif %}
 </div>
+
+<!-- Edit User Modal -->
+<div id="editUserModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="hideEditUserModal()">&times;</span>
+        <h3>Edit Profile</h3>
+        <form id="editUserForm" method="POST" action="{{ url_for('user.edit_profile') }}">
+            <div class="form-group">
+                <label for="edit_username">Username:</label>
+                <input type="text" id="edit_username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="edit_email">Email:</label>
+                <input type="email" id="edit_email" name="email" required>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Update Profile</button>
+                <button type="button" onclick="hideEditUserModal()" class="btn btn-secondary">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Child Modal -->
+<div id="editChildModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="hideEditChildModal()">&times;</span>
+        <h3>Edit Child</h3>
+        <form id="editChildForm" method="POST">
+            <div class="form-group">
+                <label for="edit_child_name">Name:</label>
+                <input type="text" id="edit_child_name" name="child_name" required>
+            </div>
+            <div class="form-group">
+                <label for="edit_child_birthdate">Birthdate:</label>
+                <input type="date" id="edit_child_birthdate" name="child_birthdate">
+            </div>
+            <div class="form-group">
+                <label for="edit_child_age">Age (optional):</label>
+                <input type="number" id="edit_child_age" name="child_age" min="0" max="18">
+            </div>
+            <div class="form-group">
+                <label for="edit_child_pin">PIN (4-10 digits):</label>
+                <input type="text" id="edit_child_pin" name="child_pin" pattern="[0-9]{4,10}" maxlength="10">
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Update Child</button>
+                <button type="button" onclick="hideEditChildModal()" class="btn btn-secondary">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function showEditUserModal(userId, username, email) {
+    document.getElementById('edit_username').value = username;
+    document.getElementById('edit_email').value = email;
+    document.getElementById('editUserModal').style.display = 'block';
+}
+
+function hideEditUserModal() {
+    document.getElementById('editUserModal').style.display = 'none';
+}
+
+function showEditChildModal(childId, name, birthdate, pin, age) {
+    document.getElementById('edit_child_name').value = name;
+    document.getElementById('edit_child_birthdate').value = birthdate;
+    document.getElementById('edit_child_pin').value = pin;
+    document.getElementById('edit_child_age').value = age || '';
+    document.getElementById('editChildForm').action = `/edit_child/${childId}`;
+    document.getElementById('editChildModal').style.display = 'block';
+}
+
+function hideEditChildModal() {
+    document.getElementById('editChildModal').style.display = 'none';
+}
+
+// Close modals when clicking outside them
+window.onclick = function(event) {
+    const userModal = document.getElementById('editUserModal');
+    const childModal = document.getElementById('editChildModal');
+    if (event.target == userModal) {
+        hideEditUserModal();
+    }
+    if (event.target == childModal) {
+        hideEditChildModal();
+    }
+}
+</script>
 {% endblock %}
