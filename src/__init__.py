@@ -51,12 +51,14 @@ def create_app(config_object=None):
     from src.controllers.auth_controller import auth_bp
     from src.controllers.family_controller import family_bp
     from src.controllers.child_controller import child_bp
+    from src.controllers.user_controller import user_bp
     from src.controllers.main import main_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(family_bp)
     app.register_blueprint(child_bp)
+    app.register_blueprint(user_bp)
     
     # Set up user loader for Flask-Login
     from src.models.user_model import User

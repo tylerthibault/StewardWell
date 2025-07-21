@@ -129,6 +129,19 @@ class User(UserMixin, db.Model):
         """
         return cls.query.filter_by(email=email).first() is not None
     
+    def update_profile(self, username=None, email=None):
+        """Update user profile information.
+        
+        Args:
+            username (str, optional): New username
+            email (str, optional): New email
+        """
+        if username is not None:
+            self.username = username
+        if email is not None:
+            self.email = email
+        db.session.commit()
+    
     def update_family(self, family_id):
         """Update user's family association.
         
