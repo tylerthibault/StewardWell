@@ -58,48 +58,7 @@
             <p class="family-code-note">Share this code with family members so they can join!</p>
         </div>
         
-        <!-- Children section -->
-        <div class="children-section">
-            <h4>Children</h4>
-            
-            <div class="add-child">
-                <form method="POST" action="{{ url_for('child.add_child') }}" class="inline-form">
-                    <div class="form-group">
-                        <label for="child_name">Child Name:</label>
-                        <input type="text" id="child_name" name="child_name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="child_age">Age (optional):</label>
-                        <input type="number" id="child_age" name="child_age" min="0" max="18">
-                    </div>
-                    <button type="submit" class="btn btn-primary">Add Child</button>
-                </form>
-            </div>
-            
-            {% if children %}
-                <div class="children-list">
-                    {% for child in children %}
-                        <div class="child-card">
-                            <div class="child-info">
-                                <h5>{{ child.name }}</h5>
-                                {% if child.age %}
-                                    <p>Age: {{ child.age }}</p>
-                                {% endif %}
-                            </div>
-                            <div class="child-actions">
-                                <a href="{{ url_for('child.delete_child', child_id=child.id) }}" 
-                                   class="btn btn-danger btn-small"
-                                   onclick="return confirm('Are you sure you want to remove {{ child.name }}?')">
-                                   Remove
-                                </a>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p class="no-children">No children added yet.</p>
-            {% endif %}
-        </div>
+    <!-- Children management moved to Family Management page -->
     {% endif %}
 </div>
 {% endblock %}
