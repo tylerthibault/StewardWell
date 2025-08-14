@@ -42,6 +42,15 @@
             {% endif %}
         {% endwith %}
 
+                {% if impersonated_child %}
+                    <div class="flash-messages" style="margin-top: -1rem;">
+                        <div class="alert" style="background:#FFF3CD;color:#856404;border:1px solid #FFECB5;">
+                            Viewing as {{ impersonated_child.name }}.
+                            <a href="{{ url_for('family_mgmt.stop_impersonating') }}" class="btn btn-secondary btn-small" style="margin-left:8px;">Return to Parent View</a>
+                        </div>
+                    </div>
+                {% endif %}
+
         {% block content %}{% endblock %}
         </main>
     </div>

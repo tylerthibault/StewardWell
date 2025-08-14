@@ -59,6 +59,9 @@
                   {% if child.age %}<p>Age: {{ child.age }}</p>{% endif %}
                 </div>
                 <div class="child-actions">
+                  <form method="POST" action="{{ url_for('family_mgmt.impersonate_child', child_id=child.id) }}" style="display:inline;">
+                    <button type="submit" class="btn btn-secondary btn-small">View as {{ child.name }}</button>
+                  </form>
                   <a href="{{ url_for('child.delete_child', child_id=child.id) }}" class="btn btn-danger btn-small" onclick="return confirm('Remove {{ child.name }}?')">Remove</a>
                 </div>
               </div>

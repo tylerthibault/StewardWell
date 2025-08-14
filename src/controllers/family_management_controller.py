@@ -3,11 +3,12 @@ Family Management Controller
 
 Allows family managers to view and approve/reject pending join requests.
 """
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, session, abort
 from flask_login import login_required, current_user
 from src.models.family_model import Family
 from src.models.join_request_model import JoinRequest
 from src.models.user_model import User
+from src.models.child_model import Child
 
 family_mgmt_bp = Blueprint('family_mgmt', __name__)
 
@@ -54,6 +55,26 @@ def invite_adult():
 
     JoinRequest.create_request(user.id, family.id)
     flash('Invitation sent (pending approval).', 'success')
+    return redirect(url_for('family_mgmt.index'))
+
+
+@family_mgmt_bp.route('/family-management/impersonate/child/<int:child_id>', methods=['POST'])
+@login_required
+def impersonate_child(child_id: int):
+    child = Child.query.get_or_404(child_id)
+    family = Family.get_by_id(current_user.family_id) if current_user.family_id else None
+    if not family or child.family_id != family.id:
+        abort(403)
+    session['impersonating_child_id'] = child.id
+    flash(f'Viewing as {child.name}.', 'success')
+    return redirect(url_for('kids.dashboard'))
+
+
+@family_mgmt_bp.route('/family-management/stop-impersonating')
+@login_required
+def stop_impersonating():
+    session.pop('impersonating_child_id', None)
+    flash('Returned to parent view.', 'info')
     return redirect(url_for('family_mgmt.index'))
 
 

@@ -7,7 +7,8 @@ Provides the application factory (create_app) and shared extensions (db, login_m
 from __future__ import annotations
 
 import config
-from flask import Flask
+
+from flask import Flask, g, session
 from sqlalchemy import text
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
@@ -65,6 +66,7 @@ def create_app() -> Flask:
     from src.controllers.store_controller import store_bp
     from src.controllers.chores_controller import chores_bp
     from src.controllers.family_management_controller import family_mgmt_bp
+    from src.controllers.kids_controller import kids_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
@@ -73,6 +75,30 @@ def create_app() -> Flask:
     app.register_blueprint(store_bp)
     app.register_blueprint(chores_bp)
     app.register_blueprint(family_mgmt_bp)
+    app.register_blueprint(kids_bp)
+
+    # Impersonation context (for kids view)
+    from flask_login import current_user  # imported here to avoid circulars
+    from src.models.child_model import Child
+
+    @app.before_request
+    def attach_impersonated_child():
+        g.impersonated_child = None
+        child_id = session.get('impersonating_child_id')
+        if not child_id:
+            return
+        if not getattr(current_user, 'is_authenticated', False):
+            session.pop('impersonating_child_id', None)
+            return
+        child = Child.query.get(child_id)
+        if not child or not current_user.family_id or child.family_id != current_user.family_id:
+            session.pop('impersonating_child_id', None)
+            return
+        g.impersonated_child = child
+
+    @app.context_processor
+    def inject_impersonation():
+        return {'impersonated_child': getattr(g, 'impersonated_child', None)}
 
     # Lightweight SQLite schema patches (non-destructive):
     # Ensure newer columns exist when working with an older local DB file.

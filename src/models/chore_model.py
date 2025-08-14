@@ -218,6 +218,11 @@ class Chore(db.Model):
         self.assigned_user_id = None  # Clear user assignment
         self.updated_at = datetime.utcnow()
         db.session.commit()
+
+    # Convenience method to commit any in-memory changes
+    def save(self):
+        self.updated_at = datetime.utcnow()
+        db.session.commit()
     
     def assign_to_user(self, user_id):
         """Assign this chore to a user (adult).
