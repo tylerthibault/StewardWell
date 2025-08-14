@@ -83,21 +83,42 @@
     <div class="form-section">
       <h3>Assignment</h3>
       
-      <div class="form-group">
-        <label for="assigned_child_id">Assign to Child</label>
-        <select id="assigned_child_id" name="assigned_child_id">
-          <option value="">Leave unassigned</option>
-          {% for child in children %}
-          <option value="{{ child.id }}" 
-                  {% if form_data and form_data.assigned_child_id == child.id|string %}selected{% endif %}>
-            {{ child.name }}
-          </option>
-          {% endfor %}
-        </select>
-        {% if not children %}
-        <small class="text-muted">No children in your family yet. <a href="{{ url_for('family_mgmt.index') }}">Add children here</a>.</small>
-        {% endif %}
+      <div class="assignment-options">
+        <div class="form-group">
+          <label for="assigned_child_id">Assign to Child</label>
+          <select id="assigned_child_id" name="assigned_child_id" onchange="clearUserAssignment()">
+            <option value="">Select a child</option>
+            {% for child in children %}
+            <option value="{{ child.id }}" 
+                    {% if form_data and form_data.assigned_child_id == child.id|string %}selected{% endif %}>
+              {{ child.name }}
+            </option>
+            {% endfor %}
+          </select>
+          {% if not children %}
+          <small class="text-muted">No children in your family yet. <a href="{{ url_for('family_mgmt.index') }}">Add children here</a>.</small>
+          {% endif %}
+        </div>
+
+        <div class="assignment-or">
+          <span>OR</span>
+        </div>
+
+        <div class="form-group">
+          <label for="assigned_user_id">Assign to Adult</label>
+          <select id="assigned_user_id" name="assigned_user_id" onchange="clearChildAssignment()">
+            <option value="">Select an adult</option>
+            {% for member in family_members %}
+            <option value="{{ member.id }}" 
+                    {% if form_data and form_data.assigned_user_id == member.id|string %}selected{% endif %}>
+              {{ member.username }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
       </div>
+
+      <small class="assignment-note">Leave both blank to create an unassigned chore that anyone can complete.</small>
     </div>
 
     <div class="form-section">
@@ -328,6 +349,42 @@
   color: #6c757d !important; 
 }
 
+.assignment-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.assignment-or {
+  text-align: center;
+  position: relative;
+  margin: 0.5rem 0;
+}
+
+.assignment-or span {
+  background: white;
+  padding: 0 1rem;
+  color: #6c757d;
+  font-weight: bold;
+}
+
+.assignment-or::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #ddd;
+  z-index: -1;
+}
+
+.assignment-note {
+  color: #6c757d;
+  font-style: italic;
+  margin-top: 1rem;
+}
+
 @media (max-width: 768px) {
   .form-row {
     grid-template-columns: 1fr;
@@ -358,6 +415,18 @@ function toggleRecurringOptions() {
     options.style.display = 'block';
   } else {
     options.style.display = 'none';
+  }
+}
+
+function clearChildAssignment() {
+  if (document.getElementById('assigned_user_id').value) {
+    document.getElementById('assigned_child_id').value = '';
+  }
+}
+
+function clearUserAssignment() {
+  if (document.getElementById('assigned_child_id').value) {
+    document.getElementById('assigned_user_id').value = '';
   }
 }
 

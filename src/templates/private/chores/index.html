@@ -65,8 +65,10 @@
         </div>
         
         <div class="assignment">
-          {% if chore.assigned_child %}
-          <span class="assigned">Assigned to: <strong>{{ chore.assigned_child.name }}</strong></span>
+          {% if chore.assigned_child_id and chore.assigned_child %}
+          <span class="assigned">👶 Assigned to: <strong>{{ chore.assigned_child.name }}</strong></span>
+          {% elif chore.assigned_user_id and chore.assigned_user %}
+          <span class="assigned">👤 Assigned to: <strong>{{ chore.assigned_user.username }}</strong></span>
           {% else %}
           <span class="unassigned">Unassigned</span>
           {% endif %}
