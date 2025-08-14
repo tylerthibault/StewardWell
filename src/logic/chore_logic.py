@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from src.models.chore_model import Chore
 from src.models.child_model import Child
 from src.models.user_model import User
+from src.models.family_model import Family
 
 
 class ChoreLogic:
@@ -17,7 +18,7 @@ class ChoreLogic:
     @staticmethod
     def create_chore(name, user_id, description=None, coin_amount=0, point_amount=0, 
                      is_recurring=False, recurring_days=None, assigned_child_id=None, 
-                     due_date=None, notes=None, priority='medium'):
+                     assigned_user_id=None, due_date=None, notes=None, priority='medium'):
         """Create a new chore with validation.
         
         Args:
@@ -29,6 +30,7 @@ class ChoreLogic:
             is_recurring (bool, optional): Whether chore recurs
             recurring_days (list, optional): List of day numbers for recurring
             assigned_child_id (int, optional): ID of assigned child
+            assigned_user_id (int, optional): ID of assigned user (adult)
             due_date (datetime, optional): Due date for the chore
             notes (str, optional): Additional notes
             priority (str, optional): Priority level
@@ -67,6 +69,16 @@ class ChoreLogic:
             if not child or child.family_id != user.family_id:
                 return False, None, "Assigned child must be from your family"
         
+        # Validate assigned user belongs to same family (and is not a child)
+        if assigned_user_id:
+            assigned_user = User.get_by_id(assigned_user_id)
+            if not assigned_user or assigned_user.family_id != user.family_id:
+                return False, None, "Assigned user must be from your family"
+        
+        # Don't allow both child and user assignment
+        if assigned_child_id and assigned_user_id:
+            return False, None, "Chore cannot be assigned to both a child and an adult"
+        
         # Validate recurring days if recurring
         if is_recurring and recurring_days:
             if not isinstance(recurring_days, list) or not all(isinstance(day, int) and 0 <= day <= 6 for day in recurring_days):
@@ -84,6 +96,7 @@ class ChoreLogic:
                 is_recurring=is_recurring,
                 recurring_days=recurring_days,
                 assigned_child_id=assigned_child_id,
+                assigned_user_id=assigned_user_id,
                 due_date=due_date,
                 notes=notes,
                 priority=priority
@@ -142,6 +155,16 @@ class ChoreLogic:
             if not child or child.family_id != user.family_id:
                 return False, None, "Assigned child must be from your family"
         
+        # Validate assigned user belongs to same family
+        if 'assigned_user_id' in kwargs and kwargs['assigned_user_id']:
+            assigned_user = User.get_by_id(kwargs['assigned_user_id'])
+            if not assigned_user or assigned_user.family_id != user.family_id:
+                return False, None, "Assigned user must be from your family"
+        
+        # Don't allow both child and user assignment
+        if kwargs.get('assigned_child_id') and kwargs.get('assigned_user_id'):
+            return False, None, "Chore cannot be assigned to both a child and an adult"
+        
         # Validate recurring days if provided
         if 'recurring_days' in kwargs and kwargs['recurring_days']:
             recurring_days = kwargs['recurring_days']
@@ -186,7 +209,7 @@ class ChoreLogic:
             return False, f"Failed to delete chore: {str(e)}"
     
     @staticmethod
-    def assign_chore(chore_id, child_id, user_id):
+    def assign_chore_to_child(chore_id, child_id, user_id):
         """Assign a chore to a child with validation.
         
         Args:
@@ -222,8 +245,44 @@ class ChoreLogic:
             return False, None, f"Failed to assign chore: {str(e)}"
     
     @staticmethod
+    def assign_chore_to_user(chore_id, assigned_user_id, user_id):
+        """Assign a chore to an adult user with validation.
+        
+        Args:
+            chore_id (int): ID of the chore to assign
+            assigned_user_id (int): ID of the user to assign to
+            user_id (int): ID of the user making the assignment
+            
+        Returns:
+            tuple: (success: bool, chore: Chore|None, error: str|None)
+        """
+        # Get the chore
+        chore = Chore.get_by_id(chore_id)
+        if not chore:
+            return False, None, "Chore not found"
+        
+        # Get the user to assign to
+        assigned_user = User.get_by_id(assigned_user_id)
+        if not assigned_user:
+            return False, None, "Assigned user not found"
+        
+        # Check if user belongs to the same family
+        user = User.get_by_id(user_id)
+        if not user:
+            return False, None, "User not found"
+        
+        if user.family_id != chore.family_id or user.family_id != assigned_user.family_id:
+            return False, None, "You can only assign chores within your own family"
+        
+        try:
+            chore.assign_to_user(assigned_user_id)
+            return True, chore, None
+        except Exception as e:
+            return False, None, f"Failed to assign chore: {str(e)}"
+    
+    @staticmethod
     def complete_chore(chore_id, user_id):
-        """Mark a chore as completed with validation.
+        """Mark a chore as completed with validation and distribute rewards.
         
         Args:
             chore_id (int): ID of the chore to complete
@@ -250,7 +309,18 @@ class ChoreLogic:
             return False, None, "Chore is already completed"
         
         try:
+            # Mark chore as completed
             chore.complete()
+            
+            # Add family points if any (community earning)
+            if chore.point_amount > 0:
+                family = Family.get_by_id(user.family_id)
+                if family:
+                    family.add_points(chore.point_amount)
+            
+            # Note: Individual coin rewards would be added to the specific user's account
+            # This is a placeholder for now - in a full implementation you'd have a user coins field
+            
             return True, chore, None
         except Exception as e:
             return False, None, f"Failed to complete chore: {str(e)}"
@@ -402,3 +472,25 @@ class ChoreLogic:
             return []
         
         return Chore.get_by_child(child_id)
+    
+    @staticmethod
+    def get_family_members(user_id):
+        """Get all family members (adults) for chore assignment.
+        
+        Args:
+            user_id (int): ID of the user
+            
+        Returns:
+            list: List of User objects in the same family
+        """
+        user = User.get_by_id(user_id)
+        if not user or not user.family_id:
+            return []
+        
+        from src.models.family_model import Family
+        family = Family.get_by_id(user.family_id)
+        if not family:
+            return []
+        
+        # Return all users in the family
+        return family.users

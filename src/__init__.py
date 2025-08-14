@@ -7,7 +7,9 @@ Provides the application factory (create_app) and shared extensions (db, login_m
 from __future__ import annotations
 
 import config
+
 from flask import Flask, g, session
+from sqlalchemy import text
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 
@@ -97,6 +99,28 @@ def create_app() -> Flask:
     @app.context_processor
     def inject_impersonation():
         return {'impersonated_child': getattr(g, 'impersonated_child', None)}
+
+    # Lightweight SQLite schema patches (non-destructive):
+    # Ensure newer columns exist when working with an older local DB file.
+    # This avoids crashes like "no such column: individual_reward.is_infinite".
+    if isinstance(app.config.get('SQLALCHEMY_DATABASE_URI'), str) and 'sqlite' in app.config['SQLALCHEMY_DATABASE_URI']:
+        with app.app_context():
+            def ensure_column(table: str, column: str, column_def: str) -> None:
+                try:
+                    result = db.session.execute(text(f"PRAGMA table_info({table})"))
+                    cols = {row[1] for row in result}  # row[1] is the column name
+                    if column not in cols:
+                        db.session.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {column_def}"))
+                        db.session.commit()
+                except Exception:
+                    # Don't block app startup on a best-effort patch
+                    db.session.rollback()
+
+            # Add any incremental columns here
+            ensure_column('individual_reward', 'is_infinite', 'INTEGER NOT NULL DEFAULT 0')
+            ensure_column('family_reward', 'is_infinite', 'INTEGER NOT NULL DEFAULT 0')
+            ensure_column('family', 'family_points', 'INTEGER NOT NULL DEFAULT 0')
+            ensure_column('chore', 'assigned_user_id', 'INTEGER')
 
     return app
 
