@@ -5,6 +5,203 @@
 {% block content %}
 <div class="dashboard">
   <h1>Chore Center</h1>
-  <p>Manage chores for your family. Coming soon: add/remove chores, assign to members (including adults), and track completion.</p>
+
+  {% if not family %}
+    <p>Join or create a family to access chores.</p>
+  {% else %}
+    <div class="chores-overview" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+      
+      <!-- Create New Chore -->
+      <div class="create-chore-section">
+        <h2>Create New Chore</h2>
+        <form method="POST" action="{{ url_for('chores.create_chore') }}" style="padding: 1rem; border: 1px solid #ddd; border-radius: 8px;">
+          <div style="margin-bottom: 1rem;">
+            <label for="name">Chore Name:</label>
+            <input type="text" id="name" name="name" required style="width: 100%;">
+          </div>
+          
+          <div style="margin-bottom: 1rem;">
+            <label for="description">Description:</label>
+            <textarea id="description" name="description" rows="3" style="width: 100%;"></textarea>
+          </div>
+          
+          <div style="margin-bottom: 1rem;">
+            <label for="points_reward">Family Points Reward:</label>
+            <input type="number" id="points_reward" name="points_reward" min="0" value="0" style="width: 100%;">
+          </div>
+          
+          <div style="margin-bottom: 1rem;">
+            <label for="assigned_to_type">Assign To:</label>
+            <select id="assigned_to_type" name="assigned_to_type" style="width: 100%;" onchange="toggleAssignmentOptions()">
+              <option value="any">Anyone</option>
+              <option value="adult">Specific Adult</option>
+              <option value="child">Specific Child</option>
+            </select>
+          </div>
+          
+          <div id="adult_assignment" style="margin-bottom: 1rem; display: none;">
+            <label for="assigned_adult">Assign to Adult:</label>
+            <select id="assigned_adult" name="assigned_to_id" style="width: 100%;">
+              <option value="">Select Adult</option>
+              {% for member in family_members %}
+                <option value="{{ member.id }}">{{ member.username }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div id="child_assignment" style="margin-bottom: 1rem; display: none;">
+            <label for="assigned_child">Assign to Child:</label>
+            <select id="assigned_child" name="assigned_to_id" style="width: 100%;">
+              <option value="">Select Child</option>
+              {% for child in children %}
+                <option value="{{ child.id }}">{{ child.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <button type="submit" class="btn btn-success">Create Chore</button>
+        </form>
+      </div>
+
+      <!-- Chores Summary -->
+      <div class="chores-summary">
+        <h2>Chores Overview</h2>
+        <div style="padding: 1rem; border: 1px solid #ddd; border-radius: 8px;">
+          <p><strong>Pending:</strong> {{ chores_summary.total_pending }} chores</p>
+          <p><strong>Completed:</strong> {{ chores_summary.total_completed }} total</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pending Chores -->
+    <div class="pending-chores" style="margin-bottom: 2rem;">
+      <h2>Pending Chores</h2>
+      {% if chores_summary.pending %}
+        <div class="chores-grid" style="display: grid; gap: 1rem;">
+          {% for chore in chores_summary.pending %}
+            <div class="chore-card" style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px;">
+              <div style="display: flex; justify-content: between; align-items: start;">
+                <div style="flex-grow: 1;">
+                  <h4>{{ chore.name }}</h4>
+                  {% if chore.description %}<p>{{ chore.description }}</p>{% endif %}
+                  <div style="display: flex; gap: 1rem; margin: 0.5rem 0;">
+                    <span style="color: #007acc;"><strong>{{ chore.points_reward }} points</strong></span>
+                    <span style="color: #6c757d;">Assigned to: {{ chore.get_assigned_name() }}</span>
+                  </div>
+                </div>
+                
+                <div class="chore-actions" style="display: flex; gap: 0.5rem;">
+                  <!-- Complete as adult -->
+                  {% if chore.assigned_to_type == 'any' or chore.assigned_to_type == 'adult' %}
+                    <form method="POST" action="{{ url_for('chores.complete_chore', chore_id=chore.id) }}" style="display: inline;">
+                      <button type="submit" class="btn btn-primary btn-small">Complete</button>
+                    </form>
+                  {% endif %}
+                  
+                  <!-- Complete for child -->
+                  {% if (chore.assigned_to_type == 'child' or chore.assigned_to_type == 'any') and children %}
+                    <div style="position: relative; display: inline-block;">
+                      <button onclick="toggleChildOptions({{ chore.id }})" class="btn btn-secondary btn-small">Complete for Child</button>
+                      <div id="child-options-{{ chore.id }}" style="display: none; position: absolute; background: white; border: 1px solid #ddd; border-radius: 4px; padding: 0.5rem; right: 0; top: 100%; z-index: 10;">
+                        {% for child in children %}
+                          <form method="POST" action="{{ url_for('chores.complete_chore_for_child', chore_id=chore.id, child_id=child.id) }}" style="margin-bottom: 0.25rem;">
+                            <button type="submit" class="btn btn-small btn-outline">{{ child.name }}</button>
+                          </form>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  {% endif %}
+                  
+                  <!-- Delete chore -->
+                  {% if chore.created_by == current_user.id or is_manager %}
+                    <form method="POST" action="{{ url_for('chores.delete_chore', chore_id=chore.id) }}" style="display: inline;" onsubmit="return confirm('Archive this chore?')">
+                      <button type="submit" class="btn btn-danger btn-small">Archive</button>
+                    </form>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p>No pending chores. Create some above!</p>
+      {% endif %}
+    </div>
+
+    <!-- Recently Completed -->
+    {% if chores_summary.completed %}
+      <div class="completed-chores">
+        <h3>Recently Completed</h3>
+        <div style="max-height: 300px; overflow-y: auto;">
+          {% for chore in chores_summary.completed %}
+            <div class="completed-chore-item" style="border-bottom: 1px solid #eee; padding: 0.5rem 0;">
+              <div style="display: flex; justify-content: space-between;">
+                <span>
+                  <strong>{{ chore.name }}</strong>
+                  {% if chore.completed_by_type == 'child' and chore.completed_by_id %}
+                    {% set child = children|selectattr('id', 'equalto', chore.completed_by_id)|first %}
+                    by {{ child.name if child else 'Unknown Child' }}
+                  {% elif chore.completed_by_type == 'adult' and chore.completed_by_id %}
+                    {% set adult = family_members|selectattr('id', 'equalto', chore.completed_by_id)|first %}
+                    by {{ adult.username if adult else current_user.username }}
+                  {% endif %}
+                </span>
+                <span style="color: #28a745; font-weight: bold;">+{{ chore.points_reward }} points</span>
+              </div>
+              <small style="color: #6c757d;">{{ chore.completed_at.strftime('%Y-%m-%d %H:%M') if chore.completed_at else '' }}</small>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Child Quick Access -->
+    {% if children %}
+      <div class="child-access" style="margin-top: 2rem;">
+        <h3>Child Chore Access</h3>
+        <div style="display: flex; gap: 1rem;">
+          {% for child in children %}
+            <a href="{{ url_for('chores.child_chores', child_id=child.id) }}" class="btn btn-outline">
+              View {{ child.name }}'s Chores
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+  {% endif %}
 </div>
+
+<script>
+function toggleAssignmentOptions() {
+  const assignType = document.getElementById('assigned_to_type').value;
+  const adultDiv = document.getElementById('adult_assignment');
+  const childDiv = document.getElementById('child_assignment');
+  
+  adultDiv.style.display = assignType === 'adult' ? 'block' : 'none';
+  childDiv.style.display = assignType === 'child' ? 'block' : 'none';
+  
+  // Clear selections when hiding
+  if (assignType !== 'adult') {
+    document.getElementById('assigned_adult').value = '';
+  }
+  if (assignType !== 'child') {
+    document.getElementById('assigned_child').value = '';
+  }
+}
+
+function toggleChildOptions(choreId) {
+  const div = document.getElementById('child-options-' + choreId);
+  div.style.display = div.style.display === 'none' ? 'block' : 'none';
+}
+
+// Close child options when clicking outside
+document.addEventListener('click', function(event) {
+  const childOptionsElements = document.querySelectorAll('[id^="child-options-"]');
+  childOptionsElements.forEach(function(element) {
+    if (!element.contains(event.target) && !element.previousElementSibling.contains(event.target)) {
+      element.style.display = 'none';
+    }
+  });
+});
+</script>
 {% endblock %}

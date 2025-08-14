@@ -5,6 +5,173 @@
 {% block content %}
 <div class="dashboard">
   <h1>Family Store</h1>
-  <p>Manage rewards for your family. Coming soon: add/remove individual and family rewards, set costs, and track redemptions.</p>
+
+  {% if not family %}
+    <p>Join or create a family to access the store.</p>
+  {% else %}
+    <!-- Family Points Display -->
+    <div class="family-points" style="background: #f0f8ff; padding: 1rem; border-radius: 8px; margin-bottom: 2rem;">
+      <h3>Family Points: {{ store_data.family_points.total_points if store_data.family_points else 0 }}</h3>
+      {% if is_manager %}
+        <details style="margin-top: 1rem;">
+          <summary style="cursor: pointer; color: #007acc;">Manually Adjust Points</summary>
+          <form method="POST" action="{{ url_for('store.adjust_points') }}" style="margin-top: 1rem;">
+            <div style="display: flex; gap: 1rem; align-items: end;">
+              <div>
+                <label for="amount">Points to Add/Subtract:</label>
+                <input type="number" id="amount" name="amount" required placeholder="e.g., 10 or -5" style="width: 150px;">
+              </div>
+              <div>
+                <label for="description">Reason:</label>
+                <input type="text" id="description" name="description" placeholder="Manual adjustment" style="width: 200px;">
+              </div>
+              <button type="submit" class="btn btn-primary">Adjust Points</button>
+            </div>
+          </form>
+        </details>
+      {% endif %}
+    </div>
+
+    <!-- Store Sections -->
+    <div class="store-sections" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+      
+      <!-- Rewards Section -->
+      <div class="rewards-section">
+        <h2>Rewards</h2>
+        {% if is_manager %}
+          <details style="margin-bottom: 1rem;">
+            <summary style="cursor: pointer; color: #007acc;">Create New Reward</summary>
+            <form method="POST" action="{{ url_for('store.create_reward') }}" style="margin-top: 1rem; padding: 1rem; border: 1px solid #ddd; border-radius: 8px;">
+              <div style="margin-bottom: 1rem;">
+                <label for="reward_name">Name:</label>
+                <input type="text" id="reward_name" name="name" required style="width: 100%;">
+              </div>
+              <div style="margin-bottom: 1rem;">
+                <label for="reward_description">Description:</label>
+                <textarea id="reward_description" name="description" rows="3" style="width: 100%;"></textarea>
+              </div>
+              <div style="margin-bottom: 1rem;">
+                <label for="reward_cost">Cost (points):</label>
+                <input type="number" id="reward_cost" name="cost" required min="0" style="width: 100%;">
+              </div>
+              <div style="margin-bottom: 1rem;">
+                <label for="reward_quantity">Quantity (leave blank for infinite):</label>
+                <input type="number" id="reward_quantity" name="quantity" min="1" placeholder="Leave blank for unlimited" style="width: 100%;">
+              </div>
+              <button type="submit" class="btn btn-success">Create Reward</button>
+            </form>
+          </details>
+        {% endif %}
+
+        <div class="rewards-list">
+          {% if store_data.rewards %}
+            {% for reward in store_data.rewards %}
+              <div class="reward-card" style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                <h4>{{ reward.name }}</h4>
+                {% if reward.description %}<p>{{ reward.description }}</p>{% endif %}
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-weight: bold; color: #007acc;">{{ reward.cost }} points</span>
+                  <div>
+                    {% if reward.quantity is none %}
+                      <span style="color: #28a745;">∞ Available</span>
+                    {% else %}
+                      <span style="color: {% if reward.quantity > 0 %}#28a745{% else %}#dc3545{% endif %};">{{ reward.quantity }} left</span>
+                    {% endif %}
+                    {% if reward.is_available() %}
+                      <form method="POST" action="{{ url_for('store.purchase_item', item_id=reward.id) }}" style="display: inline; margin-left: 1rem;">
+                        <button type="submit" class="btn btn-primary btn-small" 
+                                {% if store_data.family_points and store_data.family_points.total_points < reward.cost %}disabled{% endif %}>
+                          Purchase
+                        </button>
+                      </form>
+                    {% else %}
+                      <span style="color: #6c757d;">Unavailable</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p>No rewards available. {% if is_manager %}Create some above!{% endif %}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Coins to Points Section -->
+      <div class="conversions-section">
+        <h2>Convert Coins to Points</h2>
+        {% if is_manager %}
+          <details style="margin-bottom: 1rem;">
+            <summary style="cursor: pointer; color: #007acc;">Create Conversion Option</summary>
+            <form method="POST" action="{{ url_for('store.create_conversion') }}" style="margin-top: 1rem; padding: 1rem; border: 1px solid #ddd; border-radius: 8px;">
+              <div style="margin-bottom: 1rem;">
+                <label for="conversion_name">Name:</label>
+                <input type="text" id="conversion_name" name="name" required placeholder="e.g., Coin Exchange" style="width: 100%;">
+              </div>
+              <div style="margin-bottom: 1rem;">
+                <label for="conversion_description">Description:</label>
+                <textarea id="conversion_description" name="description" rows="3" style="width: 100%;"></textarea>
+              </div>
+              <div style="margin-bottom: 1rem;">
+                <label for="coins_per_point">Coins per 1 Family Point:</label>
+                <input type="number" id="coins_per_point" name="coins_per_point" required min="1" style="width: 100%;">
+              </div>
+              <button type="submit" class="btn btn-success">Create Conversion</button>
+            </form>
+          </details>
+        {% endif %}
+
+        <div class="conversions-list">
+          {% if store_data.conversions %}
+            {% for conversion in store_data.conversions %}
+              <div class="conversion-card" style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                <h4>{{ conversion.name }}</h4>
+                {% if conversion.description %}<p>{{ conversion.description }}</p>{% endif %}
+                <div style="margin-bottom: 1rem;">
+                  <strong>Rate:</strong> {{ conversion.conversion_ratio }} coins = 1 family point
+                </div>
+                
+                <form method="POST" action="{{ url_for('store.convert_coins', item_id=conversion.id) }}" style="display: flex; gap: 1rem; align-items: end;">
+                  <div>
+                    <label for="coins_amount_{{ conversion.id }}">Coins to Convert:</label>
+                    <input type="number" id="coins_amount_{{ conversion.id }}" name="coins_amount" required min="{{ conversion.conversion_ratio }}" 
+                           step="{{ conversion.conversion_ratio }}" placeholder="{{ conversion.conversion_ratio }}" style="width: 120px;">
+                  </div>
+                  <button type="submit" class="btn btn-warning">Convert</button>
+                </form>
+                <small style="color: #6c757d;">Minimum: {{ conversion.conversion_ratio }} coins</small>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p>No conversion options available. {% if is_manager %}Create some above!{% endif %}</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="recent-transactions">
+      <h3>Recent Transactions</h3>
+      {% if store_data.recent_transactions %}
+        <div style="max-height: 300px; overflow-y: auto;">
+          {% for transaction in store_data.recent_transactions %}
+            <div class="transaction-item" style="border-bottom: 1px solid #eee; padding: 0.5rem 0;">
+              <div style="display: flex; justify-content: space-between;">
+                <span>
+                  {{ transaction.get_actor_name() }}: {{ transaction.description }}
+                </span>
+                <span style="font-weight: bold; color: {% if transaction.amount > 0 %}#28a745{% else %}#dc3545{% endif %};">
+                  {% if transaction.amount > 0 %}+{% endif %}{{ transaction.amount }} points
+                </span>
+              </div>
+              <small style="color: #6c757d;">{{ transaction.created_at.strftime('%Y-%m-%d %H:%M') if transaction.created_at else '' }}</small>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p>No transactions yet.</p>
+      {% endif %}
+    </div>
+  {% endif %}
 </div>
 {% endblock %}

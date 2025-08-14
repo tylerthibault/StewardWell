@@ -1,0 +1,53 @@
+{% extends "bases/private.html" %}
+
+{% block title %}{{ child.name }}'s Chores - StewardWell{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+  <h1>{{ child.name }}'s Chores</h1>
+  
+  <div style="margin-bottom: 2rem;">
+    <a href="{{ url_for('chores.index') }}" class="btn btn-secondary">← Back to All Chores</a>
+  </div>
+
+  <div class="child-chores">
+    {% if available_chores %}
+      <div class="chores-list" style="display: grid; gap: 1rem;">
+        {% for chore in available_chores %}
+          <div class="chore-card" style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px;">
+            <div style="display: flex; justify-content: between; align-items: start;">
+              <div style="flex-grow: 1;">
+                <h3>{{ chore.name }}</h3>
+                {% if chore.description %}<p>{{ chore.description }}</p>{% endif %}
+                <div style="display: flex; gap: 1rem; margin: 0.5rem 0;">
+                  <span style="color: #007acc; font-size: 1.2em;"><strong>{{ chore.points_reward }} points</strong></span>
+                  {% if chore.due_date %}
+                    <span style="color: #dc3545;">Due: {{ chore.due_date.strftime('%Y-%m-%d') }}</span>
+                  {% endif %}
+                </div>
+                {% if chore.assigned_to_type == 'child' and chore.assigned_to_id == child.id %}
+                  <span style="color: #28a745; font-weight: bold;">✓ Assigned to {{ child.name }}</span>
+                {% elif chore.assigned_to_type == 'any' %}
+                  <span style="color: #007acc;">Available for anyone</span>
+                {% endif %}
+              </div>
+              
+              <div class="chore-actions">
+                <form method="POST" action="{{ url_for('chores.complete_chore_for_child', chore_id=chore.id, child_id=child.id) }}" style="display: inline;">
+                  <button type="submit" class="btn btn-success">Mark Complete</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 2rem;">
+        <h3>All caught up! 🎉</h3>
+        <p>{{ child.name }} has no pending chores right now.</p>
+        <a href="{{ url_for('chores.index') }}" class="btn btn-primary">Create More Chores</a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
