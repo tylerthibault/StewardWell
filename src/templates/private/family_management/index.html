@@ -1,0 +1,54 @@
+{% extends "bases/private.html" %}
+
+{% block title %}Family Management - StewardWell{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+  <h1>Family Management</h1>
+
+  {% if not family %}
+    <p>You are not part of a family yet. Create or join one to manage members.</p>
+  {% else %}
+    <div class="family-info" style="margin-bottom: 1rem;">
+      <h3>{{ family.name }}</h3>
+      <p><strong>Family Code:</strong> {{ family.family_code }}</p>
+    </div>
+
+    <div class="family-actions" style="margin-top: 1rem;">
+      <div class="action-card">
+        <h4>Members</h4>
+        {% if members %}
+          <ul>
+            {% for m in members %}
+              <li>{{ m.username }}{% if m.id == family.creator_id %} (Manager){% endif %}</li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p>No other members yet.</p>
+        {% endif %}
+      </div>
+
+      <div class="action-card">
+        <h4>Pending Join Requests</h4>
+        {% if is_manager %}
+          {% if pending %}
+            <ul>
+              {% for req in pending %}
+                <li>
+                  {{ req.user.username }}
+                  <a class="btn btn-primary btn-small" href="{{ url_for('family_mgmt.approve', req_id=req.id) }}">Approve</a>
+                  <a class="btn btn-danger btn-small" href="{{ url_for('family_mgmt.reject', req_id=req.id) }}">Reject</a>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p>No pending requests.</p>
+          {% endif %}
+        {% else %}
+          <p>Only the family manager can view and manage join requests.</p>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

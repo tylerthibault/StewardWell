@@ -19,7 +19,19 @@
         </div>
     </nav>
 
-    <main>
+    <div class="app-shell">
+        <aside class="sidebar" id="sidebar">
+            <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation">☰</button>
+            <div class="sidebar-header">Menu</div>
+            <nav class="sidebar-nav">
+                <a class="sidebar-link {% if request.endpoint.startswith('main.dashboard') %}active{% endif %}" href="{{ url_for('main.dashboard') }}">Dashboard</a>
+                <a class="sidebar-link {% if request.endpoint.startswith('store.') %}active{% endif %}" href="{{ url_for('store.index') }}">Family Store</a>
+                <a class="sidebar-link {% if request.endpoint.startswith('chores.') %}active{% endif %}" href="{{ url_for('chores.index') }}">Chore Center</a>
+                <a class="sidebar-link {% if request.endpoint.startswith('family_mgmt.') %}active{% endif %}" href="{{ url_for('family_mgmt.index') }}">Family Management</a>
+            </nav>
+        </aside>
+
+        <main class="content">
         {% with messages = get_flashed_messages() %}
             {% if messages %}
                 <div class="flash-messages">
@@ -31,7 +43,8 @@
         {% endwith %}
 
         {% block content %}{% endblock %}
-    </main>
+        </main>
+    </div>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>

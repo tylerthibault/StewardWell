@@ -6,6 +6,20 @@
 <div class="dashboard">
     <h1>Family Dashboard</h1>
     
+    <!-- Quick actions -->
+    <div class="family-actions" style="margin-top: 0;">
+        <div class="action-card">
+            <h4>Family Store</h4>
+            <p>Manage individual and family rewards.</p>
+            <a class="btn btn-primary" href="{{ url_for('store.index') }}">Open Store</a>
+        </div>
+        <div class="action-card">
+            <h4>Chore Center</h4>
+            <p>Add chores and assign them to family members (including adults).</p>
+            <a class="btn btn-secondary" href="{{ url_for('chores.index') }}">Open Chores</a>
+        </div>
+    </div>
+    
     {% if not family %}
         <!-- No family section -->
         <div class="no-family">

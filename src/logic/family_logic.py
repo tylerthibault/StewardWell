@@ -7,6 +7,7 @@ Following the fat logic principle - handles business rules and validation.
 
 from src.models.family_model import Family
 from src.models.user_model import User
+from src.models.join_request_model import JoinRequest
 
 
 class FamilyLogic:
@@ -79,9 +80,9 @@ class FamilyLogic:
             return False, None, "Invalid family code"
         
         try:
-            # Add user to the family
-            user.update_family(family.id)
-            return True, family, None
+            # Create a join request for approval by family manager
+            req = JoinRequest.create_request(user_id, family.id)
+            return True, family, "Join request sent and pending approval"
         except Exception as e:
             return False, None, f"Failed to join family: {str(e)}"
     
