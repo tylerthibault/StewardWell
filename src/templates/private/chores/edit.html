@@ -1,0 +1,459 @@
+{% extends "bases/private.html" %}
+
+{% block title %}Edit {{ chore.name }} - StewardWell{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+  <div class="form-header">
+    <h1>Edit Chore: {{ chore.name }}</h1>
+    <div class="header-actions">
+      <a href="{{ url_for('chores.show', chore_id=chore.id) }}" class="btn btn-secondary">← Back to Chore</a>
+      <a href="{{ url_for('chores.index') }}" class="btn btn-secondary">Back to All Chores</a>
+    </div>
+  </div>
+
+  <form method="POST" action="{{ url_for('chores.update', chore_id=chore.id) }}" class="chore-form">
+    <div class="form-section">
+      <h3>Basic Information</h3>
+      
+      <div class="form-group">
+        <label for="name" class="required">Chore Name</label>
+        <input type="text" 
+               id="name" 
+               name="name" 
+               required 
+               maxlength="200"
+               value="{{ chore.name }}"
+               placeholder="e.g., Take out trash, Clean bedroom">
+      </div>
+
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" 
+                  name="description" 
+                  rows="3"
+                  placeholder="Optional details about what needs to be done">{{ chore.description or '' }}</textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="priority">Priority</label>
+          <select id="priority" name="priority">
+            <option value="low" {% if chore.priority == 'low' %}selected{% endif %}>Low</option>
+            <option value="medium" {% if chore.priority == 'medium' %}selected{% endif %}>Medium</option>
+            <option value="high" {% if chore.priority == 'high' %}selected{% endif %}>High</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="due_date">Due Date</label>
+          <input type="date" 
+                 id="due_date" 
+                 name="due_date"
+                 value="{{ chore.due_date.strftime('%Y-%m-%d') if chore.due_date else '' }}">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Rewards</h3>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label for="coin_amount">Individual Coins 🪙</label>
+          <input type="number" 
+                 id="coin_amount" 
+                 name="coin_amount" 
+                 min="0" 
+                 value="{{ chore.coin_amount }}"
+                 placeholder="0">
+          <small>Coins earned by the individual completing the chore</small>
+        </div>
+
+        <div class="form-group">
+          <label for="point_amount">Family Points ⭐</label>
+          <input type="number" 
+                 id="point_amount" 
+                 name="point_amount" 
+                 min="0" 
+                 value="{{ chore.point_amount }}"
+                 placeholder="0">
+          <small>Points earned for the whole family</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Assignment</h3>
+      
+      <div class="form-group">
+        <label for="assigned_child_id">Assign to Child</label>
+        <select id="assigned_child_id" name="assigned_child_id">
+          <option value="" {% if not chore.assigned_child_id %}selected{% endif %}>Leave unassigned</option>
+          {% for child in children %}
+          <option value="{{ child.id }}" 
+                  {% if chore.assigned_child_id == child.id %}selected{% endif %}>
+            {{ child.name }}
+          </option>
+          {% endfor %}
+        </select>
+        {% if not children %}
+        <small class="text-muted">No children in your family yet. <a href="{{ url_for('family_mgmt.index') }}">Add children here</a>.</small>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Recurring Schedule</h3>
+      
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" 
+                 id="is_recurring" 
+                 name="is_recurring"
+                 {% if chore.is_recurring %}checked{% endif %}
+                 onchange="toggleRecurringOptions()">
+          This chore repeats
+        </label>
+      </div>
+
+      <div id="recurring-options" class="recurring-options" style="display: {% if chore.is_recurring %}block{% else %}none{% endif %};">
+        <label>Repeat on:</label>
+        <div class="days-grid">
+          {% set recurring_days = chore.get_recurring_days() %}
+          <label class="day-checkbox">
+            <input type="checkbox" name="recurring_day_0" {% if 0 in recurring_days %}checked{% endif %}>
+            Monday
+          </label>
+          <label class="day-checkbox">
+            <input type="checkbox" name="recurring_day_1" {% if 1 in recurring_days %}checked{% endif %}>
+            Tuesday
+          </label>
+          <label class="day-checkbox">
+            <input type="checkbox" name="recurring_day_2" {% if 2 in recurring_days %}checked{% endif %}>
+            Wednesday
+          </label>
+          <label class="day-checkbox">
+            <input type="checkbox" name="recurring_day_3" {% if 3 in recurring_days %}checked{% endif %}>
+            Thursday
+          </label>
+          <label class="day-checkbox">
+            <input type="checkbox" name="recurring_day_4" {% if 4 in recurring_days %}checked{% endif %}>
+            Friday
+          </label>
+          <label class="day-checkbox">
+            <input type="checkbox" name="recurring_day_5" {% if 5 in recurring_days %}checked{% endif %}>
+            Saturday
+          </label>
+          <label class="day-checkbox">
+            <input type="checkbox" name="recurring_day_6" {% if 6 in recurring_days %}checked{% endif %}>
+            Sunday
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Additional Notes</h3>
+      
+      <div class="form-group">
+        <label for="notes">Notes</label>
+        <textarea id="notes" 
+                  name="notes" 
+                  rows="3"
+                  placeholder="Any additional instructions or notes">{{ chore.notes or '' }}</textarea>
+      </div>
+    </div>
+
+    <div class="current-status">
+      <h3>Current Status</h3>
+      <div class="status-info">
+        <span class="status-badge status-{{ chore.status }}">{{ chore.status.title() }}</span>
+        <span class="info-text">
+          Created {{ chore.created_at.strftime('%B %d, %Y') }} by {{ chore.creator.username }}
+        </span>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Update Chore</button>
+      <a href="{{ url_for('chores.show', chore_id=chore.id) }}" class="btn btn-secondary">Cancel</a>
+      
+      {% if chore.status == 'pending' %}
+      <div class="quick-actions">
+        <form method="POST" action="{{ url_for('chores.complete', chore_id=chore.id) }}" style="display: inline;">
+          <button type="submit" 
+                  class="btn btn-success" 
+                  onclick="return confirm('Mark this chore as completed?')">
+            ✓ Mark as Completed
+          </button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<style>
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.chore-form {
+  max-width: 800px;
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.form-section {
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #eee;
+}
+
+.form-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.form-section h3 {
+  margin-bottom: 1rem;
+  color: #333;
+  font-size: 1.2rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.form-group label.required::after {
+  content: " *";
+  color: #dc3545;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+.form-group small {
+  display: block;
+  margin-top: 0.25rem;
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+.checkbox-label {
+  display: flex !important;
+  align-items: center;
+  font-weight: bold !important;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto !important;
+  margin-right: 0.5rem;
+  margin-bottom: 0;
+}
+
+.recurring-options {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.days-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.day-checkbox {
+  display: flex !important;
+  align-items: center;
+  font-weight: normal !important;
+  cursor: pointer;
+}
+
+.day-checkbox input[type="checkbox"] {
+  width: auto !important;
+  margin-right: 0.5rem;
+  margin-bottom: 0;
+}
+
+.current-status {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 2rem;
+}
+
+.current-status h3 {
+  margin-bottom: 0.5rem;
+  color: #333;
+  font-size: 1rem;
+}
+
+.status-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.status-badge {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.status-pending { background-color: #fff3cd; color: #856404; }
+.status-completed { background-color: #d4edda; color: #155724; }
+.status-expired { background-color: #f8d7da; color: #721c24; }
+
+.info-text {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  padding-top: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.quick-actions {
+  margin-left: auto;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.btn-primary { 
+  background-color: #007bff; 
+  color: white; 
+}
+.btn-primary:hover { 
+  background-color: #0056b3; 
+}
+
+.btn-secondary { 
+  background-color: #6c757d; 
+  color: white; 
+}
+.btn-secondary:hover { 
+  background-color: #545b62; 
+}
+
+.btn-success { 
+  background-color: #28a745; 
+  color: white; 
+}
+.btn-success:hover { 
+  background-color: #1e7e34; 
+}
+
+.text-muted { 
+  color: #6c757d !important; 
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .header-actions {
+    flex-wrap: wrap;
+  }
+  
+  .days-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .quick-actions {
+    margin-left: 0;
+  }
+}
+</style>
+
+<script>
+function toggleRecurringOptions() {
+  const checkbox = document.getElementById('is_recurring');
+  const options = document.getElementById('recurring-options');
+  
+  if (checkbox.checked) {
+    options.style.display = 'block';
+  } else {
+    options.style.display = 'none';
+  }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+  toggleRecurringOptions();
+});
+</script>
+{% endblock %}
