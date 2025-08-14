@@ -17,6 +17,7 @@ class IndividualReward(db.Model):
     description = db.Column(db.Text, nullable=True)
     qty = db.Column(db.Integer, default=1, nullable=False)
     is_available = db.Column(db.Boolean, default=True, nullable=False)
+    is_infinite = db.Column(db.Boolean, default=False, nullable=False)
     coin_cost = db.Column(db.Integer, nullable=False)
     family_id = db.Column(db.Integer, db.ForeignKey('family.id'), nullable=False)
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -39,6 +40,7 @@ class IndividualReward(db.Model):
             'description': self.description,
             'qty': self.qty,
             'is_available': self.is_available,
+            'is_infinite': self.is_infinite,
             'coin_cost': self.coin_cost,
             'family_id': self.family_id,
             'created_by': self.created_by,
@@ -75,7 +77,7 @@ class IndividualReward(db.Model):
         return query.order_by(cls.created_at.desc()).all()
     
     @classmethod
-    def create_reward(cls, name, coin_cost, family_id, created_by, description=None, qty=1, is_available=True):
+    def create_reward(cls, name, coin_cost, family_id, created_by, description=None, qty=1, is_available=True, is_infinite=False):
         """Create a new individual reward.
         
         Args:
@@ -86,6 +88,7 @@ class IndividualReward(db.Model):
             description (str, optional): Description of the reward
             qty (int, optional): Quantity available, defaults to 1
             is_available (bool, optional): Whether the reward is available, defaults to True
+            is_infinite (bool, optional): Whether the reward has infinite quantity, defaults to False
             
         Returns:
             IndividualReward: Newly created individual reward object
@@ -95,6 +98,7 @@ class IndividualReward(db.Model):
             description=description,
             qty=qty,
             is_available=is_available,
+            is_infinite=is_infinite,
             coin_cost=coin_cost,
             family_id=family_id,
             created_by=created_by

@@ -9,6 +9,7 @@ from flask_login import login_required, current_user
 from datetime import datetime
 from src.logic.chore_logic import ChoreLogic
 from src.logic.child_logic import ChildLogic
+from src.logic.family_logic import FamilyLogic
 
 chores_bp = Blueprint('chores', __name__)
 
@@ -39,7 +40,8 @@ def index():
 def new():
     """Display form to create a new chore."""
     children = ChildLogic.get_family_children(current_user.id)
-    return render_template('private/chores/new.html', children=children)
+    family_members = ChoreLogic.get_family_members(current_user.id)
+    return render_template('private/chores/new.html', children=children, family_members=family_members)
 
 
 @chores_bp.route('/chores', methods=['POST'])
@@ -52,6 +54,7 @@ def create():
     point_amount = request.form.get('point_amount', 0)
     is_recurring = request.form.get('is_recurring') == 'on'
     assigned_child_id = request.form.get('assigned_child_id')
+    assigned_user_id = request.form.get('assigned_user_id')
     notes = request.form.get('notes', '').strip()
     priority = request.form.get('priority', 'medium')
     
@@ -75,6 +78,7 @@ def create():
     description = description if description else None
     notes = notes if notes else None
     assigned_child_id = int(assigned_child_id) if assigned_child_id else None
+    assigned_user_id = int(assigned_user_id) if assigned_user_id else None
     
     success, chore, error = ChoreLogic.create_chore(
         name=name,
@@ -85,6 +89,7 @@ def create():
         is_recurring=is_recurring,
         recurring_days=recurring_days if recurring_days else None,
         assigned_child_id=assigned_child_id,
+        assigned_user_id=assigned_user_id,
         due_date=due_date,
         notes=notes,
         priority=priority
@@ -96,8 +101,10 @@ def create():
     else:
         flash(error, 'error')
         children = ChildLogic.get_family_children(current_user.id)
+        family_members = ChoreLogic.get_family_members(current_user.id)
         return render_template('private/chores/new.html', 
                              children=children,
+                             family_members=family_members,
                              form_data=request.form)
 
 
@@ -114,8 +121,9 @@ def show(chore_id):
     
     # Get children for assignment dropdown
     children = ChildLogic.get_family_children(current_user.id)
+    family_members = ChoreLogic.get_family_members(current_user.id)
     
-    return render_template('private/chores/show.html', chore=chore, children=children)
+    return render_template('private/chores/show.html', chore=chore, children=children, family_members=family_members)
 
 
 @chores_bp.route('/chores/<int:chore_id>/edit')
@@ -130,7 +138,8 @@ def edit(chore_id):
         return redirect(url_for('chores.index'))
     
     children = ChildLogic.get_family_children(current_user.id)
-    return render_template('private/chores/edit.html', chore=chore, children=children)
+    family_members = ChoreLogic.get_family_members(current_user.id)
+    return render_template('private/chores/edit.html', chore=chore, children=children, family_members=family_members)
 
 
 @chores_bp.route('/chores/<int:chore_id>', methods=['POST', 'PUT'])
@@ -159,6 +168,10 @@ def update(chore_id):
     if 'assigned_child_id' in request.form:
         assigned_child_id = request.form.get('assigned_child_id')
         updates['assigned_child_id'] = int(assigned_child_id) if assigned_child_id else None
+    
+    if 'assigned_user_id' in request.form:
+        assigned_user_id = request.form.get('assigned_user_id')
+        updates['assigned_user_id'] = int(assigned_user_id) if assigned_user_id else None
     
     if 'notes' in request.form:
         notes = request.form.get('notes', '').strip()
@@ -215,13 +228,22 @@ def delete(chore_id):
 @chores_bp.route('/chores/<int:chore_id>/assign', methods=['POST'])
 @login_required
 def assign(chore_id):
-    """Assign a chore to a child."""
+    """Assign a chore to a child or user."""
     child_id = request.form.get('child_id')
-    if not child_id:
-        flash('Please select a child to assign the chore to', 'error')
+    user_id = request.form.get('user_id')
+    
+    if not child_id and not user_id:
+        flash('Please select a child or family member to assign the chore to', 'error')
         return redirect(url_for('chores.show', chore_id=chore_id))
     
-    success, chore, error = ChoreLogic.assign_chore(chore_id, int(child_id), current_user.id)
+    if child_id and user_id:
+        flash('Please select either a child OR a family member, not both', 'error')
+        return redirect(url_for('chores.show', chore_id=chore_id))
+    
+    if child_id:
+        success, chore, error = ChoreLogic.assign_chore_to_child(chore_id, int(child_id), current_user.id)
+    else:
+        success, chore, error = ChoreLogic.assign_chore_to_user(chore_id, int(user_id), current_user.id)
     
     if success:
         flash(f'Chore assigned successfully!', 'success')
