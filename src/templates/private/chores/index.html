@@ -4,7 +4,300 @@
 
 {% block content %}
 <div class="dashboard">
-  <h1>Chore Center</h1>
-  <p>Manage chores for your family. Coming soon: add/remove chores, assign to members (including adults), and track completion.</p>
+  <div class="dashboard-header">
+    <h1>Chore Center</h1>
+    <a href="{{ url_for('chores.new') }}" class="btn btn-primary">Create New Chore</a>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <form method="GET" class="filter-form">
+      <div class="filter-group">
+        <label for="status">Status:</label>
+        <select name="status" id="status" onchange="this.form.submit()">
+          <option value="">All</option>
+          <option value="pending" {% if current_status == 'pending' %}selected{% endif %}>Pending</option>
+          <option value="completed" {% if current_status == 'completed' %}selected{% endif %}>Completed</option>
+          <option value="expired" {% if current_status == 'expired' %}selected{% endif %}>Expired</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label for="child_id">Assigned to:</label>
+        <select name="child_id" id="child_id" onchange="this.form.submit()">
+          <option value="">All Children</option>
+          {% for child in children %}
+          <option value="{{ child.id }}" {% if current_child_id == child.id %}selected{% endif %}>
+            {{ child.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      {% if current_status or current_child_id %}
+      <a href="{{ url_for('chores.index') }}" class="btn btn-secondary">Clear Filters</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Chores List -->
+  {% if chores %}
+  <div class="chores-grid">
+    {% for chore in chores %}
+    <div class="chore-card status-{{ chore.status }}">
+      <div class="chore-header">
+        <h3><a href="{{ url_for('chores.show', chore_id=chore.id) }}">{{ chore.name }}</a></h3>
+        <span class="chore-priority priority-{{ chore.priority }}">{{ chore.priority.title() }}</span>
+      </div>
+      
+      {% if chore.description %}
+      <p class="chore-description">{{ chore.description }}</p>
+      {% endif %}
+      
+      <div class="chore-details">
+        <div class="rewards">
+          {% if chore.coin_amount > 0 %}
+          <span class="reward coins">🪙 {{ chore.coin_amount }}</span>
+          {% endif %}
+          {% if chore.point_amount > 0 %}
+          <span class="reward points">⭐ {{ chore.point_amount }}</span>
+          {% endif %}
+        </div>
+        
+        <div class="assignment">
+          {% if chore.assigned_child %}
+          <span class="assigned">Assigned to: <strong>{{ chore.assigned_child.name }}</strong></span>
+          {% else %}
+          <span class="unassigned">Unassigned</span>
+          {% endif %}
+        </div>
+        
+        {% if chore.due_date %}
+        <div class="due-date">
+          Due: {{ chore.due_date.strftime('%Y-%m-%d') }}
+        </div>
+        {% endif %}
+        
+        {% if chore.is_recurring %}
+        <div class="recurring">
+          <span class="recurring-badge">🔄 Recurring</span>
+        </div>
+        {% endif %}
+      </div>
+      
+      <div class="chore-status">
+        <span class="status-badge status-{{ chore.status }}">{{ chore.status.title() }}</span>
+      </div>
+      
+      <div class="chore-actions">
+        <a href="{{ url_for('chores.show', chore_id=chore.id) }}" class="btn btn-sm btn-secondary">View</a>
+        <a href="{{ url_for('chores.edit', chore_id=chore.id) }}" class="btn btn-sm btn-primary">Edit</a>
+        {% if chore.status == 'pending' %}
+        <form method="POST" action="{{ url_for('chores.complete', chore_id=chore.id) }}" style="display: inline;">
+          <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Mark this chore as completed?')">Complete</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <h3>No chores found</h3>
+    <p>{% if current_status or current_child_id %}Try adjusting your filters{% else %}Get started by creating your first chore{% endif %}!</p>
+    {% if not (current_status or current_child_id) %}
+    <a href="{{ url_for('chores.new') }}" class="btn btn-primary">Create Your First Chore</a>
+    {% endif %}
+  </div>
+  {% endif %}
 </div>
+
+<style>
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.filters {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.filter-form {
+  display: flex;
+  gap: 1rem;
+  align-items: end;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-group label {
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+}
+
+.chores-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.chore-card {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.chore-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.chore-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 1rem;
+}
+
+.chore-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.chore-header h3 a {
+  text-decoration: none;
+  color: #333;
+}
+
+.chore-header h3 a:hover {
+  color: #007bff;
+}
+
+.chore-priority {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.priority-low { background-color: #d1ecf1; color: #0c5460; }
+.priority-medium { background-color: #fff3cd; color: #856404; }
+.priority-high { background-color: #f8d7da; color: #721c24; }
+
+.chore-description {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.chore-details {
+  margin-bottom: 1rem;
+}
+
+.rewards {
+  margin-bottom: 0.5rem;
+}
+
+.reward {
+  display: inline-block;
+  margin-right: 1rem;
+  font-weight: bold;
+}
+
+.reward.coins { color: #ffc107; }
+.reward.points { color: #17a2b8; }
+
+.assignment {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.assigned { color: #28a745; }
+.unassigned { color: #6c757d; font-style: italic; }
+
+.due-date {
+  font-size: 0.9rem;
+  color: #dc3545;
+  margin-bottom: 0.5rem;
+}
+
+.recurring-badge {
+  font-size: 0.8rem;
+  background-color: #e9ecef;
+  color: #495057;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.chore-status {
+  margin-bottom: 1rem;
+}
+
+.status-badge {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.status-pending { background-color: #fff3cd; color: #856404; }
+.status-completed { background-color: #d4edda; color: #155724; }
+.status-expired { background-color: #f8d7da; color: #721c24; }
+
+.chore-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.btn-primary { background-color: #007bff; color: white; }
+.btn-primary:hover { background-color: #0056b3; }
+
+.btn-secondary { background-color: #6c757d; color: white; }
+.btn-secondary:hover { background-color: #545b62; }
+
+.btn-success { background-color: #28a745; color: white; }
+.btn-success:hover { background-color: #1e7e34; }
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #6c757d;
+}
+
+.empty-state h3 {
+  margin-bottom: 1rem;
+  color: #495057;
+}
+</style>
 {% endblock %}
