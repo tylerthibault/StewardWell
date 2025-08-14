@@ -17,6 +17,7 @@ class Family(db.Model):
     name = db.Column(db.String(100), nullable=False)
     family_code = db.Column(db.String(10), unique=True, nullable=False)
     creator_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    family_points = db.Column(db.Integer, default=0, nullable=False)
     
     # Relationships
     users = db.relationship('User', backref='family', lazy=True, foreign_keys='User.family_id')
@@ -32,7 +33,8 @@ class Family(db.Model):
             'id': self.id,
             'name': self.name,
             'family_code': self.family_code,
-            'creator_id': self.creator_id
+            'creator_id': self.creator_id,
+            'family_points': self.family_points
         }
     
     @classmethod
@@ -99,3 +101,38 @@ class Family(db.Model):
             bool: True if code exists, False otherwise
         """
         return cls.query.filter_by(family_code=family_code).first() is not None
+    
+    def add_points(self, points):
+        """Add points to the family point pool.
+        
+        Args:
+            points (int): Number of points to add
+        """
+        if points > 0:
+            self.family_points += points
+            db.session.commit()
+    
+    def subtract_points(self, points):
+        """Subtract points from the family point pool.
+        
+        Args:
+            points (int): Number of points to subtract
+            
+        Returns:
+            bool: True if successful, False if insufficient points
+        """
+        if points > 0 and self.family_points >= points:
+            self.family_points -= points
+            db.session.commit()
+            return True
+        return False
+    
+    def set_points(self, points):
+        """Set the family point pool to a specific value.
+        
+        Args:
+            points (int): Number of points to set
+        """
+        if points >= 0:
+            self.family_points = points
+            db.session.commit()

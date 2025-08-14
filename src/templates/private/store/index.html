@@ -5,8 +5,69 @@
 {% block content %}
 <div class="dashboard">
   <h1>Family Store</h1>
-  <p>Manage rewards for your family. Create individual rewards (bought with coins) and family rewards (bought with points).</p>
   
+  <!-- Family Points Section -->
+  <div class="family-points-section">
+    <h2>Family Points: <span class="points-value">{{ family_points }}</span></h2>
+    <p>Family points are shared and earned by completing chores. Adults can manually adjust the total.</p>
+    
+    <div class="points-management">
+      <h4>Manage Family Points</h4>
+      <div class="points-forms">
+        <form method="POST" action="{{ url_for('store.adjust_family_points') }}" class="adjust-form">
+          <input type="number" name="adjustment" placeholder="Amount (+ or -)" required>
+          <button type="submit" class="btn btn-primary">Adjust Points</button>
+        </form>
+        
+        <form method="POST" action="{{ url_for('store.set_family_points') }}" class="set-form">
+          <input type="number" name="new_total" placeholder="Set total to" min="0" required>
+          <button type="submit" class="btn btn-secondary">Set Total</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Conversion Items Section -->
+  <div class="store-section">
+    <div class="section-header">
+      <h2>Coin to Points Conversion</h2>
+      <a href="{{ url_for('store.create_conversion_item') }}" class="btn btn-primary">Add Conversion Item</a>
+    </div>
+    
+    {% if conversion_items %}
+      <div class="rewards-grid">
+        {% for item in conversion_items %}
+          <div class="reward-card">
+            <h3>{{ item.name }}</h3>
+            <p class="reward-description">{{ item.description or "No description" }}</p>
+            <div class="reward-details">
+              <p><strong>Conversion:</strong> {{ item.coin_cost }} coins → {{ item.points_value }} points</p>
+              <p><strong>Status:</strong> 
+                <span class="status-badge {{ 'available' if item.is_available else 'unavailable' }}">
+                  {{ "Available" if item.is_available else "Unavailable" }}
+                </span>
+              </p>
+            </div>
+            <div class="reward-actions">
+              {% if item.is_available %}
+                <form method="POST" action="{{ url_for('store.purchase_conversion_item', item_id=item.id) }}" style="display: inline;">
+                  <button type="submit" class="btn btn-success">Convert</button>
+                </form>
+              {% endif %}
+              <a href="{{ url_for('store.edit_conversion_item', item_id=item.id) }}" class="btn btn-secondary">Edit</a>
+              <form method="POST" action="{{ url_for('store.delete_conversion_item', item_id=item.id) }}" style="display: inline;" 
+                    onsubmit="return confirm('Are you sure you want to delete this conversion item?');">
+                <button type="submit" class="btn btn-danger">Delete</button>
+              </form>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="no-rewards">No conversion items created yet. <a href="{{ url_for('store.create_conversion_item') }}">Create one now</a> to allow converting coins to family points!</p>
+    {% endif %}
+  </div>
+
   <!-- Individual Rewards Section -->
   <div class="store-section">
     <div class="section-header">
@@ -22,7 +83,13 @@
             <p class="reward-description">{{ reward.description or "No description" }}</p>
             <div class="reward-details">
               <p><strong>Cost:</strong> {{ reward.coin_cost }} coins</p>
-              <p><strong>Quantity:</strong> {{ reward.qty }}</p>
+              <p><strong>Quantity:</strong> 
+                {% if reward.is_infinite %}
+                  <span class="infinite-badge">∞ Infinite</span>
+                {% else %}
+                  {{ reward.qty }}
+                {% endif %}
+              </p>
               <p><strong>Status:</strong> 
                 <span class="status-badge {{ 'available' if reward.is_available else 'unavailable' }}">
                   {{ "Available" if reward.is_available else "Unavailable" }}
@@ -59,7 +126,13 @@
             <p class="reward-description">{{ reward.description or "No description" }}</p>
             <div class="reward-details">
               <p><strong>Cost:</strong> {{ reward.point_cost }} points</p>
-              <p><strong>Quantity:</strong> {{ reward.qty }}</p>
+              <p><strong>Quantity:</strong> 
+                {% if reward.is_infinite %}
+                  <span class="infinite-badge">∞ Infinite</span>
+                {% else %}
+                  {{ reward.qty }}
+                {% endif %}
+              </p>
               <p><strong>Status:</strong> 
                 <span class="status-badge {{ 'available' if reward.is_available else 'unavailable' }}">
                   {{ "Available" if reward.is_available else "Unavailable" }}
@@ -83,6 +156,44 @@
 </div>
 
 <style>
+.family-points-section {
+  background-color: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  border-left: 4px solid #28a745;
+}
+
+.points-value {
+  color: #28a745;
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+.points-management {
+  margin-top: 1rem;
+}
+
+.points-forms {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.adjust-form, .set-form {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.adjust-form input, .set-form input {
+  padding: 0.4rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 150px;
+}
+
 .store-section {
   margin-bottom: 3rem;
 }
@@ -141,10 +252,20 @@
   color: #721c24;
 }
 
+.infinite-badge {
+  background-color: #d1ecf1;
+  color: #0c5460;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
 .reward-actions {
   margin-top: 1rem;
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .btn {
@@ -163,6 +284,11 @@
 
 .btn-secondary {
   background-color: #6c757d;
+  color: white;
+}
+
+.btn-success {
+  background-color: #28a745;
   color: white;
 }
 

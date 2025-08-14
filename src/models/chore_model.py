@@ -23,6 +23,7 @@ class Chore(db.Model):
     is_recurring = db.Column(db.Boolean, default=False, nullable=False)
     recurring_days = db.Column(db.Text, nullable=True)  # JSON string of day numbers (0=Monday, 6=Sunday)
     assigned_child_id = db.Column(db.Integer, db.ForeignKey('child.id'), nullable=True)
+    assigned_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     family_id = db.Column(db.Integer, db.ForeignKey('family.id'), nullable=False)
     status = db.Column(db.String(20), default='pending', nullable=False)  # pending, completed, expired
     is_available = db.Column(db.Boolean, default=True, nullable=False)
@@ -33,7 +34,8 @@ class Chore(db.Model):
     
     # Relationships
     assigned_child = db.relationship('Child', backref='chores', lazy=True)
-    creator = db.relationship('User', backref='created_chores', lazy=True)
+    assigned_user = db.relationship('User', backref='assigned_chores', lazy=True, foreign_keys=[assigned_user_id])
+    creator = db.relationship('User', backref='created_chores', lazy=True, foreign_keys=[created_by])
     
     def to_dict(self):
         """Convert chore object to dictionary.
@@ -52,6 +54,7 @@ class Chore(db.Model):
             'is_recurring': self.is_recurring,
             'recurring_days': self.get_recurring_days(),
             'assigned_child_id': self.assigned_child_id,
+            'assigned_user_id': self.assigned_user_id,
             'family_id': self.family_id,
             'status': self.status,
             'is_available': self.is_available,
@@ -136,7 +139,7 @@ class Chore(db.Model):
     @classmethod
     def create_chore(cls, name, family_id, created_by, description=None, coin_amount=0, 
                      point_amount=0, is_recurring=False, recurring_days=None, 
-                     assigned_child_id=None, due_date=None, notes=None, priority='medium'):
+                     assigned_child_id=None, assigned_user_id=None, due_date=None, notes=None, priority='medium'):
         """Create a new chore.
         
         Args:
@@ -149,6 +152,7 @@ class Chore(db.Model):
             is_recurring (bool, optional): Whether chore recurs
             recurring_days (list, optional): List of day numbers for recurring
             assigned_child_id (int, optional): ID of assigned child
+            assigned_user_id (int, optional): ID of assigned user (adult)
             due_date (datetime, optional): Due date for the chore
             notes (str, optional): Additional notes
             priority (str, optional): Priority level
@@ -165,6 +169,7 @@ class Chore(db.Model):
             point_amount=point_amount,
             is_recurring=is_recurring,
             assigned_child_id=assigned_child_id,
+            assigned_user_id=assigned_user_id,
             due_date=due_date,
             notes=notes,
             priority=priority
@@ -210,5 +215,54 @@ class Chore(db.Model):
             child_id (int): ID of the child to assign to
         """
         self.assigned_child_id = child_id
+        self.assigned_user_id = None  # Clear user assignment
         self.updated_at = datetime.utcnow()
         db.session.commit()
+    
+    def assign_to_user(self, user_id):
+        """Assign this chore to a user (adult).
+        
+        Args:
+            user_id (int): ID of the user to assign to
+        """
+        self.assigned_user_id = user_id
+        self.assigned_child_id = None  # Clear child assignment
+        self.updated_at = datetime.utcnow()
+        db.session.commit()
+    
+    @classmethod
+    def get_by_user(cls, user_id):
+        """Get all chores assigned to a user (adult).
+        
+        Args:
+            user_id (int): User ID to search for
+            
+        Returns:
+            list: List of Chore objects
+        """
+        return cls.query.filter_by(assigned_user_id=user_id).all()
+    
+    def get_assigned_to(self):
+        """Get who the chore is assigned to.
+        
+        Returns:
+            dict: Information about assignment (type and name)
+        """
+        if self.assigned_child_id and self.assigned_child:
+            return {
+                'type': 'child',
+                'id': self.assigned_child_id,
+                'name': self.assigned_child.name
+            }
+        elif self.assigned_user_id and self.assigned_user:
+            return {
+                'type': 'user',
+                'id': self.assigned_user_id,
+                'name': self.assigned_user.username
+            }
+        else:
+            return {
+                'type': 'unassigned',
+                'id': None,
+                'name': 'Unassigned'
+            }

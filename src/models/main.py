@@ -11,6 +11,7 @@ from src.models.individual_reward_model import IndividualReward
 from src.models.family_reward_model import FamilyReward
 from src.models.chore_model import Chore
 from src.models.join_request_model import JoinRequest
+from src.models.conversion_item_model import ConversionItem
 
-__all__ = ['User', 'Family', 'Child', 'Chore', 'JoinRequest', 'IndividualReward', 'FamilyReward']
+__all__ = ['User', 'Family', 'Child', 'Chore', 'JoinRequest', 'IndividualReward', 'FamilyReward', 'ConversionItem']
 
