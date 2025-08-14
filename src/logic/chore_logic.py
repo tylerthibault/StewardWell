@@ -254,6 +254,91 @@ class ChoreLogic:
             return True, chore, None
         except Exception as e:
             return False, None, f"Failed to complete chore: {str(e)}"
+
+    @staticmethod
+    def submit_chore(chore_id, child_id, user_id):
+        """Child submits a chore for approval. Sets status to 'submitted'.
+
+        Args:
+            chore_id (int): ID of the chore to submit
+            child_id (int): ID of the child submitting
+            user_id (int): ID of the current user (parent in kids view)
+
+        Returns:
+            tuple: (success: bool, chore: Chore|None, error: str|None)
+        """
+        chore = Chore.get_by_id(chore_id)
+        if not chore:
+            return False, None, "Chore not found"
+
+        user = User.get_by_id(user_id)
+        if not user or not user.family_id:
+            return False, None, "User not found"
+
+        child = Child.get_by_id(child_id)
+        if not child:
+            return False, None, "Child not found"
+
+        if user.family_id != chore.family_id or child.family_id != chore.family_id:
+            return False, None, "Unauthorized for this family"
+
+        if chore.assigned_child_id != child.id:
+            return False, None, "This chore isn't assigned to this child"
+
+        if chore.status == 'completed':
+            return False, None, "Chore is already completed"
+
+        try:
+            chore.status = 'submitted'
+            chore.save()
+            return True, chore, None
+        except Exception as e:
+            return False, None, f"Failed to submit chore: {str(e)}"
+
+    @staticmethod
+    def approve_chore(chore_id, user_id):
+        """Adult approves a submitted chore; marks as completed and awards rewards later.
+
+        Returns tuple(success, chore, error).
+        """
+        chore = Chore.get_by_id(chore_id)
+        if not chore:
+            return False, None, "Chore not found"
+        user = User.get_by_id(user_id)
+        if not user:
+            return False, None, "User not found"
+        if user.family_id != chore.family_id:
+            return False, None, "Unauthorized for this family"
+        if chore.status not in ['submitted', 'pending']:
+            return False, None, "Chore is not awaiting approval"
+        try:
+            chore.complete()
+            return True, chore, None
+        except Exception as e:
+            return False, None, f"Failed to approve chore: {str(e)}"
+
+    @staticmethod
+    def reject_chore(chore_id, user_id):
+        """Adult rejects a submitted chore; returns to pending for rework.
+
+        Returns tuple(success, chore, error).
+        """
+        chore = Chore.get_by_id(chore_id)
+        if not chore:
+            return False, None, "Chore not found"
+        user = User.get_by_id(user_id)
+        if not user:
+            return False, None, "User not found"
+        if user.family_id != chore.family_id:
+            return False, None, "Unauthorized for this family"
+        if chore.status != 'submitted':
+            return False, None, "Only submitted chores can be rejected"
+        try:
+            chore.status = 'pending'
+            chore.save()
+            return True, chore, None
+        except Exception as e:
+            return False, None, f"Failed to reject chore: {str(e)}"
     
     @staticmethod
     def get_family_chores(user_id, status=None, child_id=None):

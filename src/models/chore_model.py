@@ -212,3 +212,8 @@ class Chore(db.Model):
         self.assigned_child_id = child_id
         self.updated_at = datetime.utcnow()
         db.session.commit()
+
+    # Convenience method to commit any in-memory changes
+    def save(self):
+        self.updated_at = datetime.utcnow()
+        db.session.commit()

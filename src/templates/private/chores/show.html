@@ -8,7 +8,7 @@
     <div class="header-info">
       <h1>{{ chore.name }}</h1>
       <div class="header-badges">
-        <span class="status-badge status-{{ chore.status }}">{{ chore.status.title() }}</span>
+  <span class="status-badge status-{{ chore.status }}">{{ chore.status.title() }}</span>
         <span class="priority-badge priority-{{ chore.priority }}">{{ chore.priority.title() }} Priority</span>
         {% if chore.is_recurring %}
         <span class="recurring-badge">🔄 Recurring</span>
@@ -137,14 +137,19 @@
   </div>
 
   <div class="chore-actions">
-    {% if chore.status == 'pending' %}
+    {% if chore.status == 'submitted' %}
     <form method="POST" action="{{ url_for('chores.complete', chore_id=chore.id) }}" style="display: inline;">
       <button type="submit" 
               class="btn btn-success" 
-              onclick="return confirm('Mark this chore as completed? This will award {{ chore.coin_amount }} coins and {{ chore.point_amount }} family points.')">
-        ✓ Mark as Completed
+              onclick="return confirm('Approve this chore and award {{ chore.coin_amount }} coins and {{ chore.point_amount }} family points?')">
+        ✓ Approve & Award
       </button>
     </form>
+    <form method="POST" action="{{ url_for('chores.reject', chore_id=chore.id) }}" style="display: inline; margin-left: 8px;">
+      <button type="submit" class="btn btn-secondary" onclick="return confirm('Send back to pending for rework?')">↩ Send Back</button>
+    </form>
+    {% elif chore.status == 'pending' %}
+    <p class="text-muted">Waiting for completion by assignee.</p>
     {% endif %}
 
     <a href="{{ url_for('chores.edit', chore_id=chore.id) }}" class="btn btn-primary">Edit Chore</a>

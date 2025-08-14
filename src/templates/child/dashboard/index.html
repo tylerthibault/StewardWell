@@ -1,0 +1,53 @@
+{% extends "bases/child.html" %}
+{% block title %}My Day - StewardWell{% endblock %}
+{% block content %}
+  <div class="kid-card">
+    <h2>My Chores</h2>
+    {% if pending_chores %}
+      <ul>
+        {% for chore in pending_chores %}
+          <li>
+            <strong>{{ chore.name }}</strong>
+            {% if chore.coin_amount > 0 %} · 🪙 {{ chore.coin_amount }}{% endif %}
+            {% if chore.point_amount > 0 %} · ⭐ {{ chore.point_amount }}{% endif %}
+            {% if chore.due_date %} · Due {{ chore.due_date.strftime('%Y-%m-%d') }}{% endif %}
+            <form method="POST" action="{{ url_for('kids.submit_chore', chore_id=chore.id) }}" style="display:inline; margin-left:8px;">
+              <button type="submit" class="kid-btn" style="padding:6px 12px; border-radius:10px;">Submit for Review</button>
+            </form>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No chores right now. Nice!</p>
+    {% endif %}
+  </div>
+
+  <div class="kid-card">
+    <h2>Waiting for Approval</h2>
+    {% if submitted_chores %}
+      <ul>
+        {% for chore in submitted_chores %}
+          <li>
+            <strong>{{ chore.name }}</strong>
+            {% if chore.due_date %} · Submitted {{ chore.updated_at.strftime('%Y-%m-%d') }}{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>Nothing waiting right now.</p>
+    {% endif %}
+  </div>
+
+  <div class="kid-card">
+    <h2>Completed</h2>
+    {% if completed_chores %}
+      <ul>
+        {% for chore in completed_chores %}
+          <li>{{ chore.name }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No completed chores yet.</p>
+    {% endif %}
+  </div>
+{% endblock %}

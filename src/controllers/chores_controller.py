@@ -234,14 +234,26 @@ def assign(chore_id):
 @chores_bp.route('/chores/<int:chore_id>/complete', methods=['POST'])
 @login_required
 def complete(chore_id):
-    """Mark a chore as completed."""
-    success, chore, error = ChoreLogic.complete_chore(chore_id, current_user.id)
+    """Approve and mark a submitted chore as completed."""
+    success, chore, error = ChoreLogic.approve_chore(chore_id, current_user.id)
     
     if success:
         flash(f'Chore completed! Earned {chore.coin_amount} coins and {chore.point_amount} family points!', 'success')
     else:
         flash(error, 'error')
     
+    return redirect(url_for('chores.show', chore_id=chore_id))
+
+
+@chores_bp.route('/chores/<int:chore_id>/reject', methods=['POST'])
+@login_required
+def reject(chore_id):
+    """Reject a submitted chore and return it to pending."""
+    success, chore, error = ChoreLogic.reject_chore(chore_id, current_user.id)
+    if success:
+        flash('Chore sent back to pending for rework.', 'info')
+    else:
+        flash(error, 'error')
     return redirect(url_for('chores.show', chore_id=chore_id))
 
 

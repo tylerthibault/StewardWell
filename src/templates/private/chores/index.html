@@ -18,6 +18,7 @@
           <option value="">All</option>
           <option value="pending" {% if current_status == 'pending' %}selected{% endif %}>Pending</option>
           <option value="completed" {% if current_status == 'completed' %}selected{% endif %}>Completed</option>
+          <option value="submitted" {% if current_status == 'submitted' %}selected{% endif %}>Submitted</option>
           <option value="expired" {% if current_status == 'expired' %}selected{% endif %}>Expired</option>
         </select>
       </div>
@@ -92,10 +93,13 @@
       <div class="chore-actions">
         <a href="{{ url_for('chores.show', chore_id=chore.id) }}" class="btn btn-sm btn-secondary">View</a>
         <a href="{{ url_for('chores.edit', chore_id=chore.id) }}" class="btn btn-sm btn-primary">Edit</a>
-        {% if chore.status == 'pending' %}
-        <form method="POST" action="{{ url_for('chores.complete', chore_id=chore.id) }}" style="display: inline;">
-          <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Mark this chore as completed?')">Complete</button>
-        </form>
+        {% if chore.status == 'submitted' %}
+          <form method="POST" action="{{ url_for('chores.complete', chore_id=chore.id) }}" style="display: inline;">
+            <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Approve this chore and award rewards?')">Approve</button>
+          </form>
+          <form method="POST" action="{{ url_for('chores.reject', chore_id=chore.id) }}" style="display: inline;">
+            <button type="submit" class="btn btn-sm btn-secondary" onclick="return confirm('Send back to pending?')">Send Back</button>
+          </form>
         {% endif %}
       </div>
     </div>
@@ -255,6 +259,7 @@
 
 .status-pending { background-color: #fff3cd; color: #856404; }
 .status-completed { background-color: #d4edda; color: #155724; }
+.status-submitted { background-color: #e2e3ff; color: #383d7c; }
 .status-expired { background-color: #f8d7da; color: #721c24; }
 
 .chore-actions {
