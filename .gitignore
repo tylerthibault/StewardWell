@@ -46,6 +46,6 @@ venv.bak/
 *.db
 *.sqlite
 *.sqlite3
-
-# database
-/instance/
+*.db
+/instance
+/instance/*.db
