@@ -31,6 +31,22 @@ def dashboard():
     return render_template('child/dashboard/index.html', child=child, pending_chores=pending, submitted_chores=submitted, completed_chores=completed)
 
 
+@kids_bp.get('/coin-bank')
+@login_required
+def coin_bank():
+    """Display the child's coin bank page."""
+    child_id = session.get('impersonating_child_id')
+    if not child_id:
+        flash('Start child view from Family Management.', 'info')
+        return redirect(url_for('family_mgmt.index'))
+    child = Child.query.get(child_id)
+    if not child or not current_user.family_id or child.family_id != current_user.family_id:
+        session.pop('impersonating_child_id', None)
+        flash('Child view expired or forbidden.', 'warning')
+        return redirect(url_for('family_mgmt.index'))
+    return render_template('child/coin_bank/index.html', child=child)
+
+
 @kids_bp.post('/chores/<int:chore_id>/submit')
 @login_required
 def submit_chore(chore_id: int):

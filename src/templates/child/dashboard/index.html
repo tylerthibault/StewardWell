@@ -1,6 +1,12 @@
 {% extends "bases/child.html" %}
 {% block title %}My Day - StewardWell{% endblock %}
 {% block content %}
+  <div class="navigation-buttons" style="text-align: center; margin-bottom: 20px;">
+    <a href="{{ url_for('kids.coin_bank') }}" class="kid-btn" style="margin-right: 10px;">
+      🪙 My Coin Bank
+    </a>
+  </div>
+
   <div class="kid-card">
     <h2>My Chores</h2>
     {% if pending_chores %}
