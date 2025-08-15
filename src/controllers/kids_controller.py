@@ -7,6 +7,7 @@ from flask import Blueprint, render_template, session, redirect, url_for, flash
 from flask_login import login_required, current_user
 from src.models.child_model import Child
 from src.models.chore_model import Chore
+from src.models.family_model import Family
 from src.logic.chore_logic import ChoreLogic
 
 kids_bp = Blueprint('kids', __name__, url_prefix='/kids')
@@ -29,6 +30,30 @@ def dashboard():
     submitted = [c for c in chores if getattr(c, 'status', '') == 'submitted']
     completed = [c for c in chores if getattr(c, 'status', '') == 'completed']
     return render_template('child/dashboard/index.html', child=child, pending_chores=pending, submitted_chores=submitted, completed_chores=completed)
+
+
+@kids_bp.get('/family-points')
+@login_required
+def family_points():
+    """Display the family's total points for the child view."""
+    child_id = session.get('impersonating_child_id')
+    if not child_id:
+        flash('Start child view from Family Management.', 'info')
+        return redirect(url_for('family_mgmt.index'))
+    
+    child = Child.query.get(child_id)
+    if not child or not current_user.family_id or child.family_id != current_user.family_id:
+        session.pop('impersonating_child_id', None)
+        flash('Child view expired or forbidden.', 'warning')
+        return redirect(url_for('family_mgmt.index'))
+    
+    # Get the family and its points
+    family = Family.get_by_id(current_user.family_id)
+    if not family:
+        flash('Family not found.', 'error')
+        return redirect(url_for('kids.dashboard'))
+    
+    return render_template('child/family-points.html', child=child, family=family)
 
 
 @kids_bp.post('/chores/<int:chore_id>/submit')
