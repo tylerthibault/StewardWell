@@ -121,6 +121,7 @@ def create_app() -> Flask:
             ensure_column('family_reward', 'is_infinite', 'INTEGER NOT NULL DEFAULT 0')
             ensure_column('family', 'family_points', 'INTEGER NOT NULL DEFAULT 0')
             ensure_column('chore', 'assigned_user_id', 'INTEGER')
+            ensure_column('child', 'coins', 'INTEGER NOT NULL DEFAULT 0')
 
     return app
 
