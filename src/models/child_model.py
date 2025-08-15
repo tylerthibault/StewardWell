@@ -14,6 +14,7 @@ class Child(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     age = db.Column(db.Integer, nullable=True)
+    coins = db.Column(db.Integer, default=0, nullable=False)
     family_id = db.Column(db.Integer, db.ForeignKey('family.id'), nullable=False)
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     
@@ -27,6 +28,7 @@ class Child(db.Model):
             'id': self.id,
             'name': self.name,
             'age': self.age,
+            'coins': self.coins,
             'family_id': self.family_id,
             'created_by': self.created_by
         }
@@ -56,7 +58,7 @@ class Child(db.Model):
         return cls.query.filter_by(family_id=family_id).all()
     
     @classmethod
-    def create_child(cls, name, family_id, created_by, age=None):
+    def create_child(cls, name, family_id, created_by, age=None, coins=0):
         """Create a new child.
         
         Args:
@@ -64,11 +66,12 @@ class Child(db.Model):
             family_id (int): ID of the family
             created_by (int): ID of the user creating the child
             age (int, optional): Age of the child
+            coins (int, optional): Starting coin balance, defaults to 0
             
         Returns:
             Child: Newly created child object
         """
-        child = cls(name=name, family_id=family_id, created_by=created_by, age=age)
+        child = cls(name=name, family_id=family_id, created_by=created_by, age=age, coins=coins)
         db.session.add(child)
         db.session.commit()
         return child

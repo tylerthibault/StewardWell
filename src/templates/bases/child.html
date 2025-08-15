@@ -8,7 +8,8 @@
   <style>
     :root { --child-primary: #FFC107; }
     body { background:#F5F5F5; font-family:'Comic Neue', cursive; font-size:18px; }
-    .kid-nav { background:#fff; border-bottom:1px solid #EEE; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; }
+    .kid-nav { background:#fff; border-bottom:1px solid #EEE; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 16px; }
+    .nav-links { display: flex; gap: 8px; flex-wrap: wrap; }
     .kid-btn { background:var(--child-primary); color:#000; border:none; padding:12px 20px; border-radius:12px; font-weight:700; text-decoration:none; }
     .kid-card { background:#fff; border-radius:12px; box-shadow:0 2px 4px rgba(0,0,0,0.08); padding:20px; margin:16px 0; }
   </style>
@@ -16,7 +17,11 @@
 <body>
   <div class="kid-nav">
     <div>Hi{% if child %}, {{ child.name }}{% endif %}!</div>
-    <div><a class="kid-btn" href="{{ url_for('family_mgmt.stop_impersonating') }}">Return to Parent</a></div>
+    <div class="nav-links">
+      <a class="kid-btn" href="{{ url_for('kids.dashboard') }}">My Chores</a>
+      <a class="kid-btn" href="{{ url_for('kids.store') }}">Store</a>
+      <a class="kid-btn" href="{{ url_for('family_mgmt.stop_impersonating') }}">Return to Parent</a>
+    </div>
   </div>
   <main class="container" style="padding:16px;">
     {% block content %}{% endblock %}
