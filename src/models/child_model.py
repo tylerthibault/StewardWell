@@ -16,6 +16,7 @@ class Child(db.Model):
     age = db.Column(db.Integer, nullable=True)
     family_id = db.Column(db.Integer, db.ForeignKey('family.id'), nullable=False)
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    coin_balance = db.Column(db.Integer, default=0, nullable=False)
     
     def to_dict(self):
         """Convert child object to dictionary.
@@ -28,7 +29,8 @@ class Child(db.Model):
             'name': self.name,
             'age': self.age,
             'family_id': self.family_id,
-            'created_by': self.created_by
+            'created_by': self.created_by,
+            'coin_balance': self.coin_balance
         }
     
     @classmethod
@@ -68,7 +70,7 @@ class Child(db.Model):
         Returns:
             Child: Newly created child object
         """
-        child = cls(name=name, family_id=family_id, created_by=created_by, age=age)
+        child = cls(name=name, family_id=family_id, created_by=created_by, age=age, coin_balance=0)
         db.session.add(child)
         db.session.commit()
         return child
@@ -77,3 +79,27 @@ class Child(db.Model):
         """Delete this child from the database."""
         db.session.delete(self)
         db.session.commit()
+    
+    def add_coins(self, amount):
+        """Add coins to child's balance.
+        
+        Args:
+            amount (int): Number of coins to add
+        """
+        self.coin_balance += amount
+        db.session.commit()
+    
+    def subtract_coins(self, amount):
+        """Subtract coins from child's balance.
+        
+        Args:
+            amount (int): Number of coins to subtract
+            
+        Returns:
+            bool: True if successful, False if insufficient balance
+        """
+        if self.coin_balance >= amount:
+            self.coin_balance -= amount
+            db.session.commit()
+            return True
+        return False
