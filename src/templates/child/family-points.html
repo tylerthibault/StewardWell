@@ -1,0 +1,44 @@
+{% extends "bases/child.html" %}
+{% block title %}Family Points - StewardWell{% endblock %}
+{% block content %}
+  <div class="kid-card">
+    <h2>🏠 {{ family.name }} Family Points</h2>
+    <div style="text-align: center; margin: 24px 0;">
+      <div style="font-size: 3rem; font-weight: bold; color: var(--child-primary); margin-bottom: 12px;">
+        ⭐ {{ family.family_points }}
+      </div>
+      <p style="font-size: 1.2rem; color: #666;">Total Family Points</p>
+    </div>
+    
+    {% if family.family_points > 0 %}
+      <div style="background: #E8F5E8; border-radius: 12px; padding: 16px; margin: 16px 0;">
+        <p style="text-align: center; font-weight: bold; color: #2E7D32;">
+          🎉 Great job, {{ family.name }} family! You've earned {{ family.family_points }} points together!
+        </p>
+      </div>
+    {% else %}
+      <div style="background: #FFF3E0; border-radius: 12px; padding: 16px; margin: 16px 0;">
+        <p style="text-align: center; font-weight: bold; color: #F57C00;">
+          🌟 Start earning family points by completing chores and helping out!
+        </p>
+      </div>
+    {% endif %}
+    
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="{{ url_for('kids.dashboard') }}" class="kid-btn" style="display: inline-block; text-decoration: none;">
+        🏠 Back to My Chores
+      </a>
+    </div>
+  </div>
+  
+  <div class="kid-card">
+    <h3>💡 What are Family Points?</h3>
+    <p style="margin: 12px 0; font-size: 1.1rem; line-height: 1.6;">
+      Family Points are special points that the whole family shares! When you complete chores and help around the house, 
+      you might earn points that go into the family point pool that everyone can enjoy together.
+    </p>
+    <p style="margin: 12px 0; font-size: 1.1rem; line-height: 1.6;">
+      Ask your parents what cool family activities or rewards you can get with these points! 🎊
+    </p>
+  </div>
+{% endblock %}

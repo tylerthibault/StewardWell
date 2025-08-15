@@ -2,7 +2,12 @@
 {% block title %}My Day - StewardWell{% endblock %}
 {% block content %}
   <div class="kid-card">
-    <h2>My Chores</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h2>My Chores</h2>
+      <a href="{{ url_for('kids.family_points') }}" class="kid-btn" style="text-decoration: none; padding: 8px 16px;">
+        ⭐ Family Points
+      </a>
+    </div>
     {% if pending_chores %}
       <ul>
         {% for chore in pending_chores %}
