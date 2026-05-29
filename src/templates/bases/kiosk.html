@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>{% block title %}StewardWell Kiosk{% endblock %}</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { width: 100%; height: 100%; overflow: hidden; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+        }
+        a { color: inherit; text-decoration: none; }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    {% block body %}{% endblock %}
+
+    <script>
+        // Reset to idle after 60 seconds of inactivity
+        (function () {
+            var timeout;
+            var IDLE_MS = 60000;
+            var IDLE_URL = '/kiosk/';
+
+            function resetTimer() {
+                clearTimeout(timeout);
+                timeout = setTimeout(function () {
+                    if (window.location.pathname !== IDLE_URL) {
+                        window.location.href = IDLE_URL;
+                    }
+                }, IDLE_MS);
+            }
+
+            ['touchstart', 'touchmove', 'click', 'keydown', 'mousemove'].forEach(function (evt) {
+                document.addEventListener(evt, resetTimer, { passive: true });
+            });
+
+            resetTimer();
+        })();
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

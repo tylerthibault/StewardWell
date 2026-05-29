@@ -16,7 +16,18 @@ class Child(db.Model):
     age = db.Column(db.Integer, nullable=True)
     family_id = db.Column(db.Integer, db.ForeignKey('family.id'), nullable=False)
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    
+    pin = db.Column(db.String(4), nullable=True)
+    coins = db.Column(db.Integer, default=0, nullable=False)
+
+    def set_pin(self, pin):
+        """Set the child's 4-digit PIN.
+
+        Args:
+            pin (str): 4-digit PIN string.
+        """
+        self.pin = pin
+        db.session.commit()
+
     def to_dict(self):
         """Convert child object to dictionary.
         
@@ -28,7 +39,8 @@ class Child(db.Model):
             'name': self.name,
             'age': self.age,
             'family_id': self.family_id,
-            'created_by': self.created_by
+            'created_by': self.created_by,
+            'coins': self.coins,
         }
     
     @classmethod
@@ -55,6 +67,18 @@ class Child(db.Model):
         """
         return cls.query.filter_by(family_id=family_id).all()
     
+    @classmethod
+    def get_by_family_with_pins(cls, family_id):
+        """Get all children in a family (includes pin data for kiosk auth).
+
+        Args:
+            family_id (int): Family ID to search for.
+
+        Returns:
+            list: List of Child objects.
+        """
+        return cls.query.filter_by(family_id=family_id).all()
+
     @classmethod
     def create_child(cls, name, family_id, created_by, age=None):
         """Create a new child.

@@ -1,0 +1,111 @@
+{% extends "bases/kiosk.html" %}
+
+{% block title %}Parent Access – StewardWell Kiosk{% endblock %}
+
+{% block extra_head %}
+<style>
+    body {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 2rem;
+    }
+
+    .exit-card {
+        background: rgba(255,255,255,0.07);
+        border: 2px solid rgba(255,255,255,0.15);
+        border-radius: 24px;
+        padding: 2.5rem 3rem;
+        max-width: 420px;
+        width: 100%;
+        text-align: center;
+    }
+
+    .exit-card h2 {
+        font-size: 2rem;
+        color: #f9c74f;
+        margin-bottom: 0.5rem;
+    }
+    .exit-card p {
+        color: rgba(255,255,255,0.5);
+        margin-bottom: 1.5rem;
+    }
+
+    .error-msg {
+        color: #f94144;
+        font-size: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .form-group {
+        text-align: left;
+        margin-bottom: 1.5rem;
+    }
+    .form-group label {
+        display: block;
+        color: rgba(255,255,255,0.6);
+        margin-bottom: 0.4rem;
+        font-size: 0.95rem;
+    }
+    .form-group input {
+        width: 100%;
+        padding: 0.85rem 1rem;
+        border-radius: 12px;
+        border: 2px solid rgba(255,255,255,0.15);
+        background: rgba(255,255,255,0.06);
+        color: #fff;
+        font-size: 1.1rem;
+        outline: none;
+    }
+    .form-group input:focus {
+        border-color: #f9c74f;
+    }
+
+    .btn-exit {
+        width: 100%;
+        padding: 0.95rem;
+        background: #f9c74f;
+        color: #1a1a2e;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.2rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+    .btn-exit:hover { opacity: 0.88; }
+
+    .back-btn {
+        display: inline-block;
+        margin-top: 1.5rem;
+        color: rgba(255,255,255,0.4);
+        font-size: 0.95rem;
+        text-decoration: none;
+    }
+    .back-btn:hover { color: rgba(255,255,255,0.7); }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="exit-card">
+    <h2>⚙️ Parent Access</h2>
+    <p>Enter your password to exit kiosk mode.</p>
+
+    {% if error %}
+    <div class="error-msg">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('kiosk.exit_kiosk') }}">
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" autofocus required>
+        </div>
+        <button type="submit" class="btn-exit">Exit Kiosk Mode</button>
+    </form>
+
+    <a class="back-btn" href="{{ url_for('kiosk.idle') }}">← Back to kiosk</a>
+</div>
+{% endblock %}

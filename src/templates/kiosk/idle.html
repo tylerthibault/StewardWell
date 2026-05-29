@@ -1,0 +1,155 @@
+{% extends "bases/kiosk.html" %}
+
+{% block title %}{{ family.name if family else 'StewardWell' }} – Kiosk{% endblock %}
+
+{% block extra_head %}
+<style>
+    body {
+        background: linear-gradient(135deg, #1a1a2e 0%, #2d1b3d 50%, #1a1a2e 100%);
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    /* Header */
+    .kiosk-header {
+        text-align: center;
+        padding: 2rem 1rem 1rem;
+    }
+    .kiosk-header h1 {
+        font-size: 2.8rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        color: #f9c74f;
+        text-shadow: 0 2px 12px rgba(249,199,79,0.4);
+    }
+
+    /* Children grid */
+    .children-grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1.5rem;
+        padding: 1.5rem 2rem;
+        flex: 1;
+        align-items: center;
+    }
+    .child-card {
+        background: rgba(255,255,255,0.08);
+        border: 2px solid rgba(255,255,255,0.12);
+        border-radius: 20px;
+        padding: 1.5rem 2rem;
+        text-align: center;
+        min-width: 160px;
+        backdrop-filter: blur(10px);
+    }
+    .child-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #f9c74f, #f3722c);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #1a1a2e;
+        margin: 0 auto 0.75rem;
+    }
+    .child-name {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 0.4rem;
+    }
+    .child-coins {
+        font-size: 1.1rem;
+        color: #f9c74f;
+    }
+
+    /* Family points */
+    .family-points {
+        text-align: center;
+        padding: 0.8rem 1rem;
+        font-size: 1.6rem;
+        font-weight: 600;
+        color: #a8dadc;
+    }
+    .family-points span { color: #f9c74f; }
+
+    /* Recent activity ticker */
+    .activity-ticker {
+        overflow: hidden;
+        white-space: nowrap;
+        padding: 0.4rem 1rem;
+        font-size: 1rem;
+        color: rgba(255,255,255,0.45);
+        text-align: center;
+        min-height: 1.6rem;
+    }
+
+    /* Touch prompt */
+    .touch-prompt {
+        text-align: center;
+        padding: 1rem 1rem 1.5rem;
+        font-size: 1.3rem;
+        color: rgba(255,255,255,0.6);
+        animation: pulse 2.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 0.6; }
+        50%       { opacity: 1; }
+    }
+
+    /* Parent access */
+    .parent-access {
+        position: fixed;
+        bottom: 1rem;
+        right: 1.2rem;
+        font-size: 0.85rem;
+        color: rgba(255,255,255,0.25);
+        z-index: 10;
+    }
+    .parent-access:hover { color: rgba(255,255,255,0.6); }
+</style>
+{% endblock %}
+
+{% block body %}
+<body onclick="window.location='/kiosk/select'">
+    <div class="kiosk-header">
+        <h1>{{ family.name if family else 'StewardWell' }}</h1>
+    </div>
+
+    <div class="children-grid">
+        {% if children %}
+            {% for child in children %}
+            <div class="child-card">
+                <div class="child-avatar">{{ child.name[0].upper() }}</div>
+                <div class="child-name">{{ child.name }}</div>
+                <div class="child-coins">🪙 {{ child.coins }} coins</div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="color:rgba(255,255,255,0.4);font-size:1.3rem;">No children added yet.</div>
+        {% endif %}
+    </div>
+
+    <div class="family-points">
+        Family Points: 🌟 <span>{{ family_points }}</span>
+    </div>
+
+    {% if recent_activity %}
+    <div class="activity-ticker" id="ticker">
+        ✅ Recently completed: {{ recent_activity | join(' &nbsp;·&nbsp; ') }}
+    </div>
+    {% else %}
+    <div class="activity-ticker">&nbsp;</div>
+    {% endif %}
+
+    <div class="touch-prompt">✋ Touch anywhere to get started</div>
+
+    <a class="parent-access" href="/kiosk/exit" onclick="event.stopPropagation();">⚙️ Parent Access</a>
+</body>
+{% endblock %}

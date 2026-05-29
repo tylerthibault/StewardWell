@@ -67,6 +67,7 @@ def create_app() -> Flask:
     from src.controllers.chores_controller import chores_bp
     from src.controllers.family_management_controller import family_mgmt_bp
     from src.controllers.kids_controller import kids_bp
+    from src.controllers.kiosk_controller import kiosk_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
@@ -76,6 +77,7 @@ def create_app() -> Flask:
     app.register_blueprint(chores_bp)
     app.register_blueprint(family_mgmt_bp)
     app.register_blueprint(kids_bp)
+    app.register_blueprint(kiosk_bp)
 
     # Impersonation context (for kids view)
     from flask_login import current_user  # imported here to avoid circulars
@@ -121,6 +123,8 @@ def create_app() -> Flask:
             ensure_column('family_reward', 'is_infinite', 'INTEGER NOT NULL DEFAULT 0')
             ensure_column('family', 'family_points', 'INTEGER NOT NULL DEFAULT 0')
             ensure_column('chore', 'assigned_user_id', 'INTEGER')
+            ensure_column('child', 'pin', 'VARCHAR(4)')
+            ensure_column('child', 'coins', 'INTEGER NOT NULL DEFAULT 0')
 
     return app
 

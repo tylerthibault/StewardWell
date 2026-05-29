@@ -1,0 +1,179 @@
+{% extends "bases/kiosk.html" %}
+
+{% block title %}Enter PIN – StewardWell Kiosk{% endblock %}
+
+{% block extra_head %}
+<style>
+    body {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 2rem;
+    }
+
+    .greeting {
+        font-size: 2.4rem;
+        font-weight: 700;
+        color: #f9c74f;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    /* 4-dot display */
+    .pin-dots {
+        display: flex;
+        gap: 1.2rem;
+        justify-content: center;
+        margin-bottom: 2rem;
+    }
+    .pin-dot {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 3px solid rgba(255,255,255,0.4);
+        background: transparent;
+        transition: background 0.15s, border-color 0.15s;
+    }
+    .pin-dot.filled {
+        background: #f9c74f;
+        border-color: #f9c74f;
+    }
+
+    /* Error */
+    .error-msg {
+        color: #f94144;
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+
+    /* Number pad */
+    .numpad {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        max-width: 360px;
+        width: 100%;
+    }
+    .numpad-btn {
+        background: rgba(255,255,255,0.09);
+        border: 2px solid rgba(255,255,255,0.15);
+        border-radius: 16px;
+        color: #fff;
+        font-size: 2rem;
+        font-weight: 600;
+        padding: 1.1rem;
+        cursor: pointer;
+        transition: background 0.15s, transform 0.1s;
+        text-align: center;
+        user-select: none;
+    }
+    .numpad-btn:active, .numpad-btn:hover {
+        background: rgba(249,199,79,0.2);
+        border-color: #f9c74f;
+        transform: scale(0.96);
+    }
+    .numpad-btn.backspace { font-size: 1.6rem; }
+    .numpad-btn.zero { grid-column: 2; }
+
+    /* Hidden form */
+    #pin-form { display: none; }
+
+    .back-btn {
+        margin-top: 2.5rem;
+        padding: 0.8rem 2rem;
+        background: rgba(255,255,255,0.07);
+        border: 2px solid rgba(255,255,255,0.18);
+        border-radius: 50px;
+        color: #fff;
+        font-size: 1.1rem;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .back-btn:hover { background: rgba(255,255,255,0.14); }
+
+    .first-time-note {
+        margin-bottom: 1.5rem;
+        color: rgba(255,255,255,0.5);
+        font-size: 1rem;
+        text-align: center;
+        max-width: 320px;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="greeting">Hi, {{ child.name }}! 👋</div>
+
+{% if child.pin is none %}
+<div class="first-time-note">First time? Enter a 4-digit PIN to set up your account.</div>
+{% endif %}
+
+{% if error %}
+<div class="error-msg">{{ error }}</div>
+{% endif %}
+
+<div class="pin-dots">
+    <div class="pin-dot" id="dot-0"></div>
+    <div class="pin-dot" id="dot-1"></div>
+    <div class="pin-dot" id="dot-2"></div>
+    <div class="pin-dot" id="dot-3"></div>
+</div>
+
+<div class="numpad" id="numpad">
+    <div class="numpad-btn" onclick="pressKey('1')">1</div>
+    <div class="numpad-btn" onclick="pressKey('2')">2</div>
+    <div class="numpad-btn" onclick="pressKey('3')">3</div>
+    <div class="numpad-btn" onclick="pressKey('4')">4</div>
+    <div class="numpad-btn" onclick="pressKey('5')">5</div>
+    <div class="numpad-btn" onclick="pressKey('6')">6</div>
+    <div class="numpad-btn" onclick="pressKey('7')">7</div>
+    <div class="numpad-btn" onclick="pressKey('8')">8</div>
+    <div class="numpad-btn" onclick="pressKey('9')">9</div>
+    <div class="numpad-btn backspace" onclick="pressBackspace()">⌫</div>
+    <div class="numpad-btn zero" onclick="pressKey('0')">0</div>
+</div>
+
+<form id="pin-form" method="POST" action="{{ url_for('kiosk.pin') }}">
+    <input type="hidden" name="child_id" value="{{ child.id }}">
+    <input type="hidden" name="pin" id="pin-value">
+</form>
+
+<a class="back-btn" href="{{ url_for('kiosk.select') }}">← Back</a>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+var pin = '';
+
+function updateDots() {
+    for (var i = 0; i < 4; i++) {
+        var dot = document.getElementById('dot-' + i);
+        dot.classList.toggle('filled', i < pin.length);
+    }
+}
+
+function pressKey(digit) {
+    if (pin.length >= 4) return;
+    pin += digit;
+    updateDots();
+    if (pin.length === 4) {
+        // Short delay so last dot renders before submit
+        setTimeout(submitPin, 200);
+    }
+}
+
+function pressBackspace() {
+    pin = pin.slice(0, -1);
+    updateDots();
+}
+
+function submitPin() {
+    document.getElementById('pin-value').value = pin;
+    document.getElementById('pin-form').submit();
+}
+</script>
+{% endblock %}

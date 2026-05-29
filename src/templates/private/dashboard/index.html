@@ -18,6 +18,13 @@
             <p>Add chores and assign them to family members (including adults).</p>
             <a class="btn btn-secondary" href="{{ url_for('chores.index') }}">Open Chores</a>
         </div>
+        <div class="action-card">
+            <h4>Kiosk Mode</h4>
+            <p>Launch a full-screen display for kids to check chores and coins.</p>
+            <form method="POST" action="{{ url_for('kiosk.enter') }}">
+                <button type="submit" class="btn btn-primary">🖥️ Enable Kiosk Mode</button>
+            </form>
+        </div>
     </div>
     
     {% if not family %}
