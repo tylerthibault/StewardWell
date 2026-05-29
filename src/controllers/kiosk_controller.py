@@ -14,6 +14,7 @@ from sqlalchemy import desc
 from src.models.child_model import Child
 from src.models.chore_model import Chore
 from src.models.family_model import Family
+from src.logic.chore_logic import ChoreLogic
 
 kiosk_bp = Blueprint('kiosk', __name__, url_prefix='/kiosk')
 
@@ -139,24 +140,69 @@ def child_board():
         session.pop('kiosk_child_id', None)
         return redirect(url_for('kiosk.select'))
 
-    pending_chores = [
-        c for c in Chore.get_by_child(child_id)
-        if c.status == 'pending'
-    ]
+    all_chores = Chore.get_by_child(child_id)
+    pending_chores = [c for c in all_chores if c.status == 'pending']
+    submitted_chores = [c for c in all_chores if c.status == 'submitted']
 
-    return render_template('kiosk/child_board.html', child=child, chores=pending_chores)
+    return render_template('kiosk/child_board.html', child=child, chores=pending_chores, submitted_chores=submitted_chores)
 
 
-@kiosk_bp.route('/child/done', methods=['POST'])
+@kiosk_bp.route('/child/claim', methods=['POST'])
+@login_required
+def claim_chore():
+    """Submit a chore as done (moves to submitted status awaiting parent approval)."""
+    child_id = session.get('kiosk_child_id')
+    chore_id = request.form.get('chore_id', type=int)
+    if not child_id or not chore_id:
+        return redirect(url_for('kiosk.child_board'))
+    success, chore, error = ChoreLogic.submit_chore(chore_id, child_id, current_user.id)
+    return redirect(url_for('kiosk.child_board'))
+
+
+@kiosk_bp.route('/child/done', methods=['GET'])
 @login_required
 def child_done():
-    """Mark the child's session as complete and return to the idle screen.
+    """Clear the child session and return to the idle screen.
 
-    Clears the active child from the session so the display resets to the
-    family idle view.
+    "Done for now" button — clears the active child from the session.
     """
     session.pop('kiosk_child_id', None)
     return redirect(url_for('kiosk.idle'))
+
+
+@kiosk_bp.route('/approvals', methods=['GET'])
+@login_required
+def approvals():
+    """Parent approval queue — lists all submitted chores."""
+    family = _get_family()
+    if not family:
+        return redirect(url_for('main.dashboard'))
+    submitted = Chore.query.filter_by(family_id=family.id, status='submitted').order_by(Chore.updated_at.desc()).all()
+    return render_template('kiosk/approvals.html', chores=submitted, family=family)
+
+
+@kiosk_bp.route('/approvals/<int:chore_id>/approve', methods=['POST'])
+@login_required
+def approve_chore(chore_id):
+    """Approve a submitted chore, awarding coins and points."""
+    success, chore, error = ChoreLogic.approve_chore(chore_id, current_user.id)
+    if success:
+        flash(f'✅ {chore.name} approved! {chore.coin_amount} coins awarded.', 'success')
+    else:
+        flash(error or 'Could not approve chore.', 'error')
+    return redirect(url_for('kiosk.approvals'))
+
+
+@kiosk_bp.route('/approvals/<int:chore_id>/reject', methods=['POST'])
+@login_required
+def reject_chore(chore_id):
+    """Reject a submitted chore, returning it to pending."""
+    success, chore, error = ChoreLogic.reject_chore(chore_id, current_user.id)
+    if success:
+        flash('Chore sent back to pending.', 'info')
+    else:
+        flash(error or 'Could not reject chore.', 'error')
+    return redirect(url_for('kiosk.approvals'))
 
 
 @kiosk_bp.route('/exit', methods=['GET', 'POST'])

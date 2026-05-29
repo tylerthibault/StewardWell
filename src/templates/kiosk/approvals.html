@@ -1,0 +1,62 @@
+{% extends "bases/private.html" %}
+
+{% block title %}Chore Approvals – StewardWell{% endblock %}
+
+{% block content %}
+<div class="approvals-page">
+    <div class="page-header" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
+        <h1>🗂️ Chore Approvals</h1>
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">← Dashboard</a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}" style="margin-bottom:1rem; padding:0.75rem 1rem; border-radius:8px;
+                background: {% if category == 'success' %}#d4edda{% elif category == 'error' %}#f8d7da{% else %}#d1ecf1{% endif %};
+                color: {% if category == 'success' %}#155724{% elif category == 'error' %}#721c24{% else %}#0c5460{% endif %};">
+                {{ message }}
+            </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if chores %}
+    <div class="approvals-list">
+        {% for chore in chores %}
+        <div class="approval-card" style="background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:1.25rem 1.5rem; margin-bottom:1rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+            <div class="approval-info" style="flex:1; min-width:180px;">
+                <div style="font-size:1.1rem; font-weight:700; color:#1a1a2e;">{{ chore.name }}</div>
+                {% if chore.assigned_child_id %}
+                    {% set child = chore.get_assigned_child() if chore.get_assigned_child is defined else none %}
+                    <div style="color:#666; font-size:0.9rem; margin-top:0.25rem;">
+                        Child ID: {{ chore.assigned_child_id }}
+                    </div>
+                {% endif %}
+                <div style="color:#444; font-size:0.85rem; margin-top:0.25rem;">
+                    🪙 {{ chore.coin_amount }} coins &nbsp;·&nbsp; 🌟 {{ chore.point_amount }} pts
+                </div>
+                <div style="color:#999; font-size:0.8rem; margin-top:0.25rem;">
+                    Submitted: {{ chore.updated_at.strftime('%b %d, %Y %I:%M %p') if chore.updated_at else 'Unknown' }}
+                </div>
+            </div>
+            <div class="approval-actions" style="display:flex; gap:0.5rem;">
+                <form method="POST" action="{{ url_for('kiosk.approve_chore', chore_id=chore.id) }}">
+                    <button type="submit" class="btn btn-primary" style="background:#28a745; border-color:#28a745;">✅ Approve</button>
+                </form>
+                <form method="POST" action="{{ url_for('kiosk.reject_chore', chore_id=chore.id) }}">
+                    <button type="submit" class="btn btn-secondary" style="background:#dc3545; border-color:#dc3545; color:#fff;">❌ Reject</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center; padding:3rem; color:#666;">
+        <div style="font-size:3rem; margin-bottom:1rem;">🎉</div>
+        <h3>No chores awaiting approval</h3>
+        <p>All caught up! Check back after the kids do some chores.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

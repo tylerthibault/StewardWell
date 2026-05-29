@@ -34,12 +34,26 @@
         {% endif %}
     </div>
 
-    <form id="claim-form" method="POST" action="{{ url_for('kiosk.child_done') }}">
+    <form id="claim-form" method="POST" action="{{ url_for('kiosk.claim_chore') }}">
         <input type="hidden" name="chore_id" id="claim-chore-id">
     </form>
 
+    {% if submitted_chores %}
+    <div class="submitted-section">
+        <h3>⏳ Waiting for approval</h3>
+        <div class="submitted-list">
+            {% for chore in submitted_chores %}
+            <div class="submitted-card">
+                <span class="chore-name">{{ chore.name }}</span>
+                <span class="coin-badge">🪙 {{ chore.coin_amount }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
     <div class="board-bottom">
-        <a class="done-btn" href="{{ url_for('kiosk.idle') }}">Done for now →</a>
+        <a class="done-btn" href="{{ url_for('kiosk.child_done') }}">Done for now →</a>
     </div>
 
 </body>

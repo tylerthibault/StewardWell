@@ -449,3 +449,14 @@ main {
         cursor: pointer;
     }
 }
+
+.badge {
+    background: #f94144;
+    color: #fff;
+    border-radius: 50px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-left: 6px;
+    vertical-align: middle;
+}

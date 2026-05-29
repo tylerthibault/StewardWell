@@ -10,6 +10,7 @@ from src.models.chore_model import Chore
 from src.models.child_model import Child
 from src.models.user_model import User
 from src.models.family_model import Family
+from src import db
 
 
 class ChoreLogic:
@@ -383,6 +384,20 @@ class ChoreLogic:
             return False, None, "Chore is not awaiting approval"
         try:
             chore.complete()
+
+            # Award coins to the child
+            if chore.assigned_child_id:
+                child = Child.get_by_id(chore.assigned_child_id)
+                if child:
+                    child.coins = (child.coins or 0) + chore.coin_amount
+                    db.session.commit()
+
+            # Award family points
+            if chore.point_amount > 0:
+                family = Family.get_by_id(user.family_id)
+                if family:
+                    family.add_points(chore.point_amount)
+
             return True, chore, None
         except Exception as e:
             return False, None, f"Failed to approve chore: {str(e)}"

@@ -804,3 +804,30 @@ body > * { position: relative; z-index: 1; }
   transition: color 0.18s ease;
 }
 .exit-cancel:hover { color: var(--text-secondary); }
+
+.submitted-section {
+    text-align: center;
+    padding: 1.5rem;
+    color: var(--teal);
+}
+
+.submitted-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+    margin-top: 0.75rem;
+}
+
+.submitted-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 10px;
+    padding: 0.5rem 1rem;
+    opacity: 0.75;
+    font-size: 0.95rem;
+}
